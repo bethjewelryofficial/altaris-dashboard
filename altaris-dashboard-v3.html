@@ -1,0 +1,3061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALTARIS — Financial Intelligence Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  /* ── ALTARIS BRAND PALETTE (strictly from guidelines) ── */
+  --blue:          #3D5A73;  /* Altaris Blue — primary brand */
+  --blue-dark:     #2D4255;
+  --blue-deep:     #1C2E3D;
+  --ink:           #15161A;  /* Ink — primary text/dark */
+  --fog:           #ECEDEE;  /* Fog — background */
+  --steel:         #686E73;  /* Steel — secondary UI */
+  --mist:          #D9E1E7;  /* Mist — support */
+  --white:         #FFFFFF;
+  --orange:        #F5A623;  /* Accent Orange — alerts/emphasis only */
+  --orange-soft:   #FEF3DC;
+  /* ── MISSING SEMANTIC COLORS (fixed) ── */
+  --green:         #2A6248;  /* alias for --profit */
+  --green-soft:    #E3F2EC;  /* alias for --profit-soft */
+  --red:           #B83030;  /* alias for --loss */
+  --red-soft:      #FAEBEB;  /* alias for --loss-soft */
+  /* ── SEMANTIC TOKENS (derived strictly from brand) ── */
+  --profit:        #2A6248;  /* success/profit — deep green */
+  --profit-soft:   #E3F2EC;
+  --loss:          #B83030;  /* loss/danger */
+  --loss-soft:     #FAEBEB;
+  --warn:          #B87600;  /* caution */
+  --warn-soft:     #FEF2D6;
+  --panel:         #F4F5F7;
+  --border:        #D9DCDF;
+  --border-soft:   #E8EAED;
+  --ink-mute:      #686E73;  /* = Steel */
+  --ink-faint:     #9EA3A8;
+  /* ── TYPOGRAPHY (brand spec) ── */
+  --display: 'Archivo Black', sans-serif;       /* headlines */
+  --heading: 'Space Grotesk', sans-serif;       /* subheadings */
+  --body:    'Inter', sans-serif;
+  --mono:    'JetBrains Mono', monospace;
+  --radius:    6px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Global heading color — Altaris Blue on all display/heading text */
+h1, h2, h3, h4, h5, h6 { color: var(--blue); font-family: var(--display); }
+
+body {
+  font-family: var(--body);
+  background: var(--fog);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  background: #1C2D3F;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 58px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+.topbar-logo {
+  display: flex;
+  align-items: center;
+}
+.altaris-svg-logo {
+  height: 36px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+}
+.topbar-sub {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.health-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-weight: 500;
+}
+.health-pill.good { background: var(--green-soft); color: var(--green); }
+.health-pill.warn { background: var(--orange-soft); color: #B8760A; }
+.health-pill.danger { background: var(--red-soft); color: var(--red); }
+.health-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.btn-sm {
+  font-family: var(--body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 100px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: var(--white);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-sm:hover { background: rgba(255,255,255,0.08); }
+.btn-sm.primary { background: var(--blue); border-color: var(--blue); }
+
+/* ── TABS ── */
+.tabs {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+  position: sticky;
+  top: 52px;
+  z-index: 999;
+  overflow-x: auto;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 14px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--ink-mute);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.15s;
+  user-select: none;
+}
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+.tab-icon { margin-right: 6px; }
+
+/* ── LAYOUT ── */
+.main { padding: 24px; max-width: 1440px; margin: 0 auto; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── GRID ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid-12 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+.col-span-2 { grid-column: span 2; }
+.col-span-3 { grid-column: span 3; }
+.col-span-4 { grid-column: span 4; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  font-weight: 500;
+}
+.card-action {
+  font-size: 11px;
+  color: var(--blue);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ── KPI CARDS ── */
+.kpi-value {
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  color: var(--ink);
+}
+.kpi-label {
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin-top: 4px;
+  font-weight: 500;
+}
+.kpi-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 8px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.kpi-delta.up { background: var(--green-soft); color: var(--green); }
+.kpi-delta.down { background: var(--red-soft); color: var(--red); }
+.kpi-delta.flat { background: var(--mist); color: var(--steel); }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-family: var(--display);
+  font-size: 16px;
+  letter-spacing: 0.3px;
+  color: var(--blue);
+}
+.section-sub {
+  font-size: 12px;
+  color: var(--ink-mute);
+  margin-top: 2px;
+}
+
+/* ── INTELLIGENCE BLOCKS ── */
+.intel-block {
+  border-left: 3px solid var(--blue);
+  background: linear-gradient(135deg, #F0F4F7 0%, var(--white) 100%);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.intel-block.risk { border-left-color: var(--red); background: linear-gradient(135deg, #FDF5F5 0%, var(--white) 100%); }
+.intel-block.opportunity { border-left-color: var(--green); background: linear-gradient(135deg, #F2FAF6 0%, var(--white) 100%); }
+.intel-block.warning { border-left-color: var(--orange); background: linear-gradient(135deg, #FEF9F0 0%, var(--white) 100%); }
+.intel-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.intel-block .intel-label { color: var(--blue); }
+.intel-block.risk .intel-label { color: var(--red); }
+.intel-block.opportunity .intel-label { color: var(--green); }
+.intel-block.warning .intel-label { color: #B8760A; }
+.intel-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.intel-text strong { color: var(--ink); }
+
+/* ── DECISION ENGINE ── */
+.decision-card {
+  background: var(--ink);
+  color: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 12px;
+}
+.decision-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.decision-label::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--orange);
+  border-radius: 50%;
+}
+.decision-text {
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.9);
+}
+.decision-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+.decision-action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.action-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--orange);
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── TABLE ── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table th {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  font-weight: 500;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--fog); }
+.data-table .mono { font-family: var(--mono); font-size: 12px; }
+.data-table .positive { color: var(--green); font-weight: 600; }
+.data-table .negative { color: var(--red); font-weight: 600; }
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  height: 6px;
+  background: var(--fog);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: var(--blue);
+  transition: width 0.5s ease;
+}
+.progress-fill.green { background: var(--green); }
+.progress-fill.orange { background: var(--orange); }
+.progress-fill.red { background: var(--red); }
+
+/* ── FORM ELEMENTS ── */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.form-input, .form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.form-input:focus, .form-select:focus { border-color: var(--blue); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 100px;
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  letter-spacing: 0.2px;
+}
+.btn-primary { background: var(--blue); color: var(--white); }
+.btn-primary:hover { background: var(--blue-dark); }
+.btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--fog); }
+.btn-danger { background: var(--red); color: var(--white); }
+.btn-danger:hover { background: #B83030; }
+.btn-icon { padding: 8px 12px; }
+
+/* ── BADGE ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.badge-blue { background: var(--mist); color: var(--blue); }
+.badge-green { background: var(--green-soft); color: var(--green); }
+.badge-red { background: var(--red-soft); color: var(--red); }
+.badge-orange { background: var(--orange-soft); color: #B8760A; }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+/* ── HEALTH SCORE ── */
+.health-ring {
+  position: relative;
+  width: 120px; height: 120px;
+  flex-shrink: 0;
+}
+.health-score-text {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.health-score-num {
+  font-family: var(--display);
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ink);
+}
+.health-score-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+}
+
+/* ── BRANCH TAG ── */
+.branch-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid;
+}
+.branch-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ── CHART CONTAINER ── */
+.chart-wrap { position: relative; height: 220px; }
+.chart-wrap.tall { height: 280px; }
+.chart-wrap.short { height: 160px; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(21,22,26,0.6);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(2px);
+}
+.modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.modal-title {
+  font-family: var(--display);
+  font-size: 18px;
+  color: var(--blue);
+}
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--ink-mute);
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+}
+.modal-close:hover { background: var(--fog); }
+
+/* ── PILL TABS ── */
+.pill-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--fog);
+  border-radius: 100px;
+  padding: 3px;
+  width: fit-content;
+  margin-bottom: 16px;
+}
+.pill-tab {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--ink-mute);
+  transition: all 0.15s;
+  border: none;
+  background: none;
+}
+.pill-tab.active { background: var(--white); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+/* ── BRANCH COLORS ── */
+.b1 { color: #3D5A73; border-color: #3D5A73; }
+.b2 { color: #2A7D4F; border-color: #2A7D4F; }
+.b3 { color: #B8760A; border-color: #B8760A; }
+.b4 { color: #7B5EA7; border-color: #7B5EA7; }
+.b5 { color: #D63B3B; border-color: #D63B3B; }
+
+/* ── SPARKLINE ── */
+.sparkline { height: 40px; }
+
+/* ── FORECAST BANDS ── */
+.forecast-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+.forecast-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-mute);
+}
+.legend-line {
+  width: 20px; height: 2px;
+  border-radius: 1px;
+}
+.legend-line.dashed { background: repeating-linear-gradient(90deg, var(--orange) 0, var(--orange) 4px, transparent 4px, transparent 8px); }
+
+/* ── PERIOD SELECTOR ── */
+.period-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.period-select-wrap {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.period-select-wrap label {
+  font-size: 12px;
+  color: var(--ink-mute);
+  font-weight: 500;
+}
+.period-select-wrap select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-family: var(--body);
+  color: var(--ink);
+  background: var(--white);
+  outline: none;
+}
+.branch-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.branch-filter-btn {
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--ink-mute);
+  transition: all 0.15s;
+}
+.branch-filter-btn.active { background: var(--ink); color: var(--white); border-color: var(--ink); }
+
+/* ── TOOLTIP ── */
+.tooltip-wrap { position: relative; display: inline-block; }
+.tooltip-text {
+  visibility: hidden;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 100;
+}
+.tooltip-wrap:hover .tooltip-text { visibility: visible; }
+
+/* ── UTIL ── */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.justify-end { justify-content: flex-end; }
+.gap-4 { gap: 4px; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.mt-4 { margin-top: 4px; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mt-20 { margin-top: 20px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-16 { margin-bottom: 16px; }
+.text-sm { font-size: 12px; }
+.text-xs { font-size: 11px; }
+.text-mute { color: var(--ink-mute); }
+.text-right { text-align: right; }
+.font-mono { font-family: var(--mono); }
+.font-bold { font-weight: 700; }
+.w-full { width: 100%; }
+.hidden { display: none !important; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .col-span-2, .col-span-3, .col-span-4 { grid-column: span 1; }
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  .main { padding: 12px; }
+  .kpi-value { font-size: 24px; }
+  .topbar-sub { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <!-- ALTARIS LOGO — matches brand guidelines exactly
+         Ring: near-complete circle with notch gap at ~1 o-clock
+         Notch: short diagonal tick at the gap (NOT an arrow)
+         Dot: filled center circle -->
+    <div style="display:flex;align-items:center;gap:14px;">
+      <!--
+        ALTARIS ICON — Brand spec:
+        - Near-complete circle ring, gap at ~1 o-clock
+        - Notch: short tick OUTSIDE the ring at the gap, angled upper-right (~NE)
+        - Large filled center dot (~1/3 ring diameter)
+        All in white (transparent bg) for dark header
+      -->
+      <svg width="44" height="44" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <!-- Ring: near-complete circle with small gap for the notch -->
+        <path d="M 31.74 12.38 A 14 14 0 1 1 29.55 9.76" stroke="white" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+        <!-- Vector notch: single short line, radially outward from the ring at the gap -->
+        <line x1="30.72" y1="11.00" x2="35.20" y2="7.25" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+        <!-- Center dot: intelligence, focus, data -->
+        <circle cx="20" cy="20" r="5.5" fill="white"/>
+      </svg>
+      <!-- Wordmark: real HTML so Archivo Black web font renders perfectly -->
+      <div style="display:flex;flex-direction:column;line-height:1;">
+        <span style="font-family:'Archivo Black',sans-serif;font-size:20px;font-weight:900;color:white;letter-spacing:3.5px;line-height:1;display:block;">ALTARIS</span>
+        <span style="font-family:'Inter',sans-serif;font-size:6.5px;font-weight:500;color:rgba(255,255,255,0.58);letter-spacing:2.4px;text-transform:uppercase;line-height:1;margin-top:3px;display:block;">AI OPERATING SYSTEM FOR BUSINESS</span>
+      </div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="health-pill good" id="topHealthPill">
+      <div class="health-dot"></div>
+      <span id="topHealthLabel">HEALTHY</span>
+    </div>
+    <button class="btn-sm" onclick="switchTab('settings');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab')[document.querySelectorAll('.tab').length-1].classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-settings').classList.add('active');loadSettings();setTimeout(()=>document.getElementById('loyverseCSV').scrollIntoView({behavior:'smooth'}),100)">↓ Loyverse</button>
+    <button class="btn-sm" onclick="openModal('addBranchModal')">+ Branch</button>
+    <button class="btn-sm primary" onclick="openModal('dataEntryModal')">+ Entry</button>
+  </div>
+</div>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')"><span class="tab-icon">◎</span>Overview</div>
+  <div class="tab" onclick="switchTab('revenue')"><span class="tab-icon">↗</span>Revenue</div>
+  <div class="tab" onclick="switchTab('profit')"><span class="tab-icon">◈</span>Profit</div>
+  <div class="tab" onclick="switchTab('cashflow')"><span class="tab-icon">⟳</span>Cash Flow</div>
+  <div class="tab" onclick="switchTab('intelligence')"><span class="tab-icon">◉</span>Intelligence</div>
+  <div class="tab" onclick="switchTab('forecast')"><span class="tab-icon">⤴</span>Forecast</div>
+  <div class="tab" onclick="switchTab('branches')"><span class="tab-icon">⊞</span>Branches</div>
+  <div class="tab" onclick="switchTab('health')"><span class="tab-icon">♥</span>Health</div>
+  <div class="tab" onclick="switchTab('analysis')"><span class="tab-icon">◧</span>Analysis</div>
+  <div class="tab" onclick="switchTab('settings')"><span class="tab-icon">⚙</span>Settings</div>
+</div>
+
+<div class="main">
+
+<!-- ════════════════════════════════════════════
+     PAGE: OVERVIEW
+════════════════════════════════════════════ -->
+<div id="page-overview" class="page active">
+
+  <div class="period-bar">
+    <div class="period-select-wrap">
+      <label>Period</label>
+      <select id="overviewMonth" onchange="renderAll()">
+        <option value="all">All Months</option>
+      </select>
+    </div>
+    <div class="period-select-wrap">
+      <label>Year</label>
+      <select id="overviewYear" onchange="renderAll()">
+        <option value="all">All Years</option>
+      </select>
+    </div>
+    <div class="branch-filter" id="overviewBranchFilter"></div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="grid-4 mb-16" id="overviewKPIs"></div>
+
+  <!-- Decision Engine Banner -->
+  <div id="decisionBanner" class="mb-16"></div>
+
+  <!-- Charts Row -->
+  <div class="grid-2 mb-16">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Revenue by Branch</span>
+        <span class="badge badge-blue" id="revBadge">—</span>
+      </div>
+      <div class="chart-wrap"><canvas id="overviewRevChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Revenue Trend</span>
+        <span class="card-action" onclick="switchTab('revenue')">Details →</span>
+      </div>
+      <div class="chart-wrap"><canvas id="overviewTrendChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3 mb-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Gross Margin by Branch</span></div>
+      <div class="chart-wrap"><canvas id="overviewMarginChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Expense Breakdown</span></div>
+      <div class="chart-wrap"><canvas id="overviewExpChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Net Profit Split</span></div>
+      <div class="chart-wrap"><canvas id="overviewProfitChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Insight Feed -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">Intelligence Feed</span><span class="card-action" onclick="switchTab('intelligence')">Full Engine →</span></div>
+    <div id="overviewInsightFeed"></div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: REVENUE
+════════════════════════════════════════════ -->
+<div id="page-revenue" class="page">
+  <div class="period-bar">
+    <div class="period-select-wrap"><label>Month</label><select id="revMonth" onchange="renderAll()"><option value="all">All</option></select></div>
+    <div class="period-select-wrap"><label>Year</label><select id="revYear" onchange="renderAll()"><option value="all">All</option></select></div>
+  </div>
+
+  <div class="grid-4 mb-16" id="revKPIs"></div>
+
+  <div class="grid-2 mb-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Monthly Revenue Trend</span></div>
+      <div class="chart-wrap tall"><canvas id="revTrendChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Branch Comparison (Bar)</span></div>
+      <div class="chart-wrap tall"><canvas id="revBranchBar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2 mb-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Revenue Share (Donut)</span></div>
+      <div class="chart-wrap"><canvas id="revShareChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Month-over-Month Growth %</span></div>
+      <div class="chart-wrap"><canvas id="revMoMChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Revenue Ledger</span></div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="revLedger"></table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: PROFIT
+════════════════════════════════════════════ -->
+<div id="page-profit" class="page">
+  <div class="period-bar">
+    <div class="period-select-wrap"><label>Month</label><select id="profMonth" onchange="renderAll()"><option value="all">All</option></select></div>
+    <div class="period-select-wrap"><label>Year</label><select id="profYear" onchange="renderAll()"><option value="all">All</option></select></div>
+  </div>
+
+  <div class="grid-4 mb-16" id="profKPIs"></div>
+
+  <div class="grid-2 mb-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Gross vs Net Profit Trend</span></div>
+      <div class="chart-wrap tall"><canvas id="profTrendChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Cost Structure Waterfall</span></div>
+      <div class="chart-wrap tall"><canvas id="profWaterfallChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3 mb-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Margin by Branch</span></div>
+      <div class="chart-wrap"><canvas id="profMarginBar"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Expense Ratio</span></div>
+      <div class="chart-wrap"><canvas id="profExpRatioChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">P&L Summary</span></div>
+      <div id="profPLSummary"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: CASH FLOW
+════════════════════════════════════════════ -->
+<div id="page-cashflow" class="page">
+  <div class="grid-4 mb-16" id="cashKPIs"></div>
+
+  <div class="grid-2 mb-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Cash Flow Waterfall (Monthly)</span></div>
+      <div class="chart-wrap tall"><canvas id="cashWaterfallChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Cumulative Cash Position</span></div>
+      <div class="chart-wrap tall"><canvas id="cashPositionChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3 mb-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Inflow vs Outflow</span></div>
+      <div class="chart-wrap"><canvas id="cashFlowBar"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Expense Categories</span></div>
+      <div class="chart-wrap"><canvas id="cashExpCatChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Burn Rate Trend</span></div>
+      <div class="chart-wrap"><canvas id="cashBurnChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: INTELLIGENCE
+════════════════════════════════════════════ -->
+<div id="page-intelligence" class="page">
+  <div class="grid-12 gap-16">
+    <div class="flex-col gap-16">
+      <!-- Decision Engine -->
+      <div id="decisionEngine"></div>
+    </div>
+    <div class="flex-col gap-16">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Insight Engine — Anomalies & Patterns</span></div>
+        <div id="insightEngine"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Risk Engine</span></div>
+        <div id="riskEngine"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Opportunity Engine</span></div>
+        <div id="opportunityEngine"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: FORECAST
+════════════════════════════════════════════ -->
+<div id="page-forecast" class="page">
+  <div class="grid-4 mb-16" id="forecastKPIs"></div>
+
+  <div class="grid-2 mb-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Revenue Forecast (3-Month)</span></div>
+      <div class="chart-wrap tall"><canvas id="forecastRevChart"></canvas></div>
+      <div class="forecast-legend">
+        <div class="forecast-legend-item"><div class="legend-line" style="background:var(--blue)"></div>Actual</div>
+        <div class="forecast-legend-item"><div class="legend-line dashed"></div>Forecast</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Profit Forecast</span></div>
+      <div class="chart-wrap tall"><canvas id="forecastProfChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3 mb-16">
+    <div class="card col-span-2">
+      <div class="card-header"><span class="card-title">Cash Flow Projection</span></div>
+      <div class="chart-wrap"><canvas id="forecastCashChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Growth Rate Assumptions</span></div>
+      <div id="forecastAssumptions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: BRANCHES
+════════════════════════════════════════════ -->
+<div id="page-branches" class="page">
+  <div class="section-header mb-16">
+    <div>
+      <div class="section-title">Branch Management</div>
+      <div class="section-sub">Manage branches and compare performance</div>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('addBranchModal')">+ Add Branch</button>
+  </div>
+
+  <div class="grid-3 mb-16" id="branchCards"></div>
+
+  <div class="card mb-16">
+    <div class="card-header"><span class="card-title">Branch Comparison — Revenue</span></div>
+    <div class="chart-wrap"><canvas id="branchCompRevChart"></canvas></div>
+  </div>
+
+  <div class="card mb-16">
+    <div class="card-header"><span class="card-title">Branch Comparison — Margin %</span></div>
+    <div class="chart-wrap"><canvas id="branchCompMarginChart"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Branch Performance Matrix</span></div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="branchMatrix"></table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: HEALTH
+════════════════════════════════════════════ -->
+<div id="page-health" class="page">
+  <div id="healthScoreSection" class="card mb-16">
+    <div class="flex items-center gap-16">
+      <div class="health-ring">
+        <canvas id="healthRingChart" width="120" height="120"></canvas>
+        <div class="health-score-text">
+          <div class="health-score-num" id="healthScoreNum">—</div>
+          <div class="health-score-label">SCORE</div>
+        </div>
+      </div>
+      <div>
+        <div class="section-title" id="healthScoreTitle">Business Health Score</div>
+        <div class="text-mute text-sm mt-4" id="healthScoreSub"></div>
+        <div id="healthGrade" class="mt-8"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3 mb-16" id="healthMetrics"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Health Radar</span></div>
+      <div class="chart-wrap"><canvas id="healthRadarChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">KPI Scorecard</span></div>
+      <div id="healthKPIScorecard"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: ANALYSIS
+════════════════════════════════════════════ -->
+<div id="page-analysis" class="page">
+  <div class="grid-2 mb-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Revenue vs Expenses (Scatter)</span></div>
+      <div class="chart-wrap tall"><canvas id="anaScatterChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Break-Even Analysis</span></div>
+      <div class="chart-wrap tall"><canvas id="anaBreakEvenChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3 mb-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Year-over-Year Comparison</span></div>
+      <div class="chart-wrap"><canvas id="anaYoYChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Tax Liability Estimate</span></div>
+      <div id="anaTaxSection"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Top/Bottom Branch</span></div>
+      <div id="anaTopBottom"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Full Financial Ledger</span></div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="anaFullLedger"></table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: SETTINGS
+════════════════════════════════════════════ -->
+<div id="page-settings" class="page">
+  <div class="section-title mb-16">Settings & Tax Regime</div>
+
+  <div class="grid-2 gap-16">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Tax Configuration</span></div>
+      <div class="form-group">
+        <label class="form-label">Tax Regime</label>
+        <select class="form-select" id="settingsTaxRegime" onchange="saveSettings()">
+          <option value="none">None / Exempt</option>
+          <option value="vat">VAT (12%)</option>
+          <option value="percentage">Percentage Tax (3%)</option>
+          <option value="income">Income Tax Only (25%)</option>
+          <option value="create">CREATE Act (20%)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Corporate Income Tax Rate (%)</label>
+        <input type="number" class="form-input" id="settingsCITRate" value="25" onchange="saveSettings()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Business Name</label>
+        <input type="text" class="form-input" id="settingsBusinessName" value="My Business" onchange="saveSettings()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Base Currency</label>
+        <select class="form-select" id="settingsCurrency" onchange="saveSettings()">
+          <option value="PHP">PHP (₱)</option>
+          <option value="USD">USD ($)</option>
+          <option value="SGD">SGD (S$)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Default Expense Assumptions</span></div>
+      <div class="form-group">
+        <label class="form-label">Default COGS % of Revenue</label>
+        <input type="number" class="form-input" id="settingsCOGS" value="40" onchange="saveSettings()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Forecast Growth Rate (%)</label>
+        <input type="number" class="form-input" id="settingsGrowth" value="5" onchange="saveSettings()">
+      </div>
+      <div class="card-header mt-16" style="margin-bottom:12px"><span class="card-title">Data Management</span></div>
+      <div class="flex gap-8" style="flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="exportData()">Export JSON</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">Import JSON</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        <button class="btn btn-danger" onclick="if(confirm('Clear ALL data?')){clearAllData()}">Clear All Data</button>
+      </div>
+      <div class="divider"></div>
+      <div class="card-header" style="margin-bottom:12px"><span class="card-title">📥 Loyverse CSV Import</span></div>
+
+      <!-- Step guide -->
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--ink-mute);">
+          <span style="font-family:var(--mono);font-size:10px;background:var(--blue);color:white;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</span>
+          In Loyverse: go to <strong style="color:var(--ink)">Reports → Sales Summary</strong>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--ink-mute);">
+          <span style="font-family:var(--mono);font-size:10px;background:var(--blue);color:white;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</span>
+          Set your date range, tap the <strong style="color:var(--ink)">Export / Download ↓</strong> button — save the <strong style="color:var(--ink)">.csv file</strong>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--ink-mute);">
+          <span style="font-family:var(--mono);font-size:10px;background:var(--blue);color:white;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</span>
+          Click <strong style="color:var(--ink)">Choose CSV File</strong> below — select that file — done ✓
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Select Branch for Import</label>
+        <select class="form-select" id="loyverseBranch"></select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Month & Year of this report</label>
+        <div class="form-row">
+          <select class="form-select" id="loyverseMonth">
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+          <input type="number" class="form-input" id="loyverseYear" value="2025" min="2020" max="2030">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">COGS % (used if CSV has no cost data)</label>
+        <input type="number" class="form-input" id="loyverseCOGS" value="40" min="0" max="100" placeholder="40">
+      </div>
+
+      <!-- FILE UPLOAD — primary method -->
+      <input type="file" id="loyverseFileInput" accept=".csv,.txt" style="display:none" onchange="handleLoyverseFile(event)">
+      <button class="btn btn-primary w-full" style="font-size:14px;padding:14px;" onclick="document.getElementById('loyverseFileInput').click()">
+        📂 Choose CSV File from Loyverse
+      </button>
+
+      <!-- DRAG & DROP zone -->
+      <div id="loyverseDrop" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center;margin-top:10px;cursor:pointer;transition:all 0.2s;color:var(--ink-mute);font-size:12px;"
+        ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='#F0F5FA';"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background='';"
+        ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';handleLoyverseDrop(event);"
+        onclick="document.getElementById('loyverseFileInput').click()">
+        or drag & drop your .csv file here
+      </div>
+
+      <!-- PASTE fallback -->
+      <div style="margin-top:14px;">
+        <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('▸')?'▾ Hide paste option':'▸ Or paste CSV text manually';"
+          style="background:none;border:none;font-size:12px;color:var(--blue);cursor:pointer;font-weight:600;padding:0;">
+          ▸ Or paste CSV text manually
+        </button>
+        <div style="display:none;margin-top:10px;">
+          <textarea class="form-input" id="loyverseCSV" rows="5" placeholder="Paste CSV content here..." style="resize:vertical;font-family:var(--mono);font-size:11px;"></textarea>
+          <button class="btn btn-ghost w-full" style="margin-top:8px;" onclick="importLoyverseCSV()">Import from Pasted Text</button>
+        </div>
+      </div>
+
+      <div id="loyverseResult" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ════════════════════════════════════════════
+     MODAL: DATA ENTRY
+════════════════════════════════════════════ -->
+<div id="dataEntryModal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Financial Entry</div>
+      <button class="modal-close" onclick="closeModal('dataEntryModal')">✕</button>
+    </div>
+    <div class="form-row mb-12">
+      <div class="form-group">
+        <label class="form-label">Branch</label>
+        <select class="form-select" id="entryBranch"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Month</label>
+        <select class="form-select" id="entryMonth">
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row mb-12">
+      <div class="form-group">
+        <label class="form-label">Year</label>
+        <input type="number" class="form-input" id="entryYear" value="2024" min="2000" max="2099">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Revenue (Gross Sales)</label>
+        <input type="number" class="form-input" id="entryRevenue" placeholder="0.00" min="0">
+      </div>
+    </div>
+    <div class="form-row-3 mb-12">
+      <div class="form-group">
+        <label class="form-label">COGS</label>
+        <input type="number" class="form-input" id="entryCOGS" placeholder="0.00" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rent</label>
+        <input type="number" class="form-input" id="entryRent" placeholder="0.00" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Utilities</label>
+        <input type="number" class="form-input" id="entryUtilities" placeholder="0.00" min="0">
+      </div>
+    </div>
+    <div class="form-row mb-16">
+      <div class="form-group">
+        <label class="form-label">Other Expenses</label>
+        <input type="number" class="form-input" id="entryOther" placeholder="0.00" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <input type="text" class="form-input" id="entryNotes" placeholder="e.g. Holiday promo">
+      </div>
+    </div>
+    <div class="flex justify-end gap-8">
+      <button class="btn btn-ghost" onclick="closeModal('dataEntryModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save Entry</button>
+    </div>
+    <div class="divider"></div>
+    <div class="card-title mb-8">Saved Entries</div>
+    <div style="max-height:200px;overflow-y:auto">
+      <table class="data-table" id="entryListTable"></table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     MODAL: ADD BRANCH
+════════════════════════════════════════════ -->
+<div id="addBranchModal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Branch</div>
+      <button class="modal-close" onclick="closeModal('addBranchModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Branch Name</label>
+      <input type="text" class="form-input" id="newBranchName" placeholder="e.g. SM Mall Branch">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Location</label>
+        <input type="text" class="form-input" id="newBranchLocation" placeholder="e.g. Daet, Camarines Norte">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Color Tag</label>
+        <select class="form-select" id="newBranchColor">
+          <option value="#3D5A73">Altaris Blue</option>
+          <option value="#2A7D4F">Forest Green</option>
+          <option value="#B8760A">Amber</option>
+          <option value="#7B5EA7">Violet</option>
+          <option value="#D63B3B">Crimson</option>
+          <option value="#15161A">Ink</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Opening Month</label>
+      <input type="month" class="form-input" id="newBranchOpening">
+    </div>
+    <div class="flex justify-end gap-8">
+      <button class="btn btn-ghost" onclick="closeModal('addBranchModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addBranch()">Add Branch</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Global state — declared first so all functions can access ──
+var currentTab = 'overview';
+
+// ══════════════════════════════════════════════════════════
+// DATA STORE
+// ══════════════════════════════════════════════════════════
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+let db = {
+  branches: [],
+  entries: [],
+  settings: {
+    taxRegime: 'vat',
+    citRate: 25,
+    businessName: 'My Business',
+    currency: 'PHP',
+    defaultCOGS: 40,
+    forecastGrowth: 5
+  }
+};
+
+// ── PERSISTENCE ──
+function save() { localStorage.setItem('altaris_db', JSON.stringify(db)); }
+function load() {
+  const raw = localStorage.getItem('altaris_db');
+  if (raw) { try { db = JSON.parse(raw); } catch(e) {} }
+}
+
+// ── CURRENCY ──
+function sym() { return db.settings.currency === 'PHP' ? '₱' : db.settings.currency === 'USD' ? '$' : 'S$'; }
+function fmt(n) {
+  if (!n && n !== 0) return '—';
+  const s = sym();
+  if (Math.abs(n) >= 1000000) return s + (n/1000000).toFixed(2) + 'M';
+  if (Math.abs(n) >= 1000) return s + (n/1000).toFixed(1) + 'K';
+  return s + n.toFixed(2);
+}
+function fmtFull(n) {
+  if (!n && n !== 0) return '—';
+  return sym() + n.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// ── SEED DATA ──
+function seedData() {
+  if (db.branches.length > 0) return;
+  db.branches = [
+    { id: 'b1', name: 'OG Shopping Mall', location: 'Daet, Camarines Norte', color: '#3D5A73', opening: '2022-01' },
+    { id: 'b2', name: 'Public Market', location: 'Daet, Camarines Norte', color: '#2A7D4F', opening: '2022-06' },
+    { id: 'b3', name: 'LABO Maharlika', location: 'Labo, Camarines Norte', color: '#B8760A', opening: '2023-08' }
+  ];
+  db.settings.businessName = 'BETH Jewelry & Accessories';
+  // 2024 Data
+  const revByBranch = {b1:[120000,135000,118000,142000,155000,138000,125000,160000,145000,132000,168000,195000],
+                       b2:[80000,85000,78000,95000,102000,88000,79000,105000,98000,87000,112000,138000],
+                       b3:[0,0,0,0,0,0,0,45000,62000,71000,88000,105000]};
+  for (let m=1; m<=12; m++) {
+    db.branches.forEach(br => {
+      const rev = revByBranch[br.id][m-1];
+      if (!rev) return;
+      db.entries.push({
+        id: 'e_'+br.id+'_2024_'+m,
+        branchId: br.id,
+        month: m, year: 2024,
+        revenue: rev,
+        cogs: rev * 0.38,
+        rent: br.id==='b1'?18000:br.id==='b2'?12000:9000,
+        utilities: br.id==='b1'?4500:br.id==='b2'?3000:2500,
+        otherExpenses: rev * 0.05,
+        notes: ''
+      });
+    });
+  }
+  // 2025 Data — Branch 1 declining YoY, Branch 2 stable, Branch 3 growing
+  const rev2025 = {
+    b1:[74000,80000,71000,88000,92000,84000],   // ~38% YoY decline
+    b2:[82000,88000,81000,98000,105000,91000],   // stable/slight growth
+    b3:[112000,125000,108000,138000,152000,141000] // strong growth
+  };
+  for (let m=1; m<=6; m++) {
+    db.branches.forEach(br => {
+      const rev = rev2025[br.id][m-1];
+      if (!rev) return;
+      db.entries.push({
+        id: 'e_'+br.id+'_2025_'+m,
+        branchId: br.id,
+        month: m, year: 2025,
+        revenue: rev,
+        cogs: rev * 0.40,
+        rent: br.id==='b1'?18000:br.id==='b2'?12000:9500,
+        utilities: br.id==='b1'?4800:br.id==='b2'?3200:2800,
+        otherExpenses: rev * 0.06,
+        notes: m===1&&br.id==='b1'?'Post-holiday slump — investigating':'',
+      });
+    });
+  }
+  save();
+}
+
+// ── COMPUTED ──
+function computeEntry(e) {
+  const gross = e.cogs + e.rent + e.utilities + e.otherExpenses;
+  const grossProfit = e.revenue - e.cogs;
+  const netProfit = e.revenue - gross;
+  const grossMargin = e.revenue > 0 ? (grossProfit / e.revenue * 100) : 0;
+  const netMargin = e.revenue > 0 ? (netProfit / e.revenue * 100) : 0;
+  const tax = computeTax(netProfit);
+  const netAfterTax = netProfit - tax;
+  return { ...e, gross, grossProfit, netProfit, grossMargin, netMargin, tax, netAfterTax };
+}
+
+function computeTax(netProfit) {
+  if (netProfit <= 0) return 0;
+  const regime = db.settings.taxRegime;
+  if (regime === 'none') return 0;
+  if (regime === 'vat') return 0; // VAT is on sales, not profit — simplified
+  if (regime === 'percentage') return 0; // Sales tax, not profit tax here
+  if (regime === 'income') return netProfit * (db.settings.citRate/100);
+  if (regime === 'create') return netProfit * 0.20;
+  return 0;
+}
+
+function filterEntries(filters = {}) {
+  return db.entries.filter(e => {
+    if (filters.branchId && e.branchId !== filters.branchId) return false;
+    if (filters.year && filters.year !== 'all' && e.year !== parseInt(filters.year)) return false;
+    if (filters.month && filters.month !== 'all' && e.month !== parseInt(filters.month)) return false;
+    return true;
+  }).map(computeEntry);
+}
+
+function sumEntries(entries) {
+  return entries.reduce((acc, e) => ({
+    revenue: acc.revenue + e.revenue,
+    cogs: acc.cogs + e.cogs,
+    rent: acc.rent + e.rent,
+    utilities: acc.utilities + e.utilities,
+    otherExpenses: acc.otherExpenses + e.otherExpenses,
+    gross: acc.gross + e.gross,
+    grossProfit: acc.grossProfit + e.grossProfit,
+    netProfit: acc.netProfit + e.netProfit,
+    tax: acc.tax + e.tax,
+    netAfterTax: acc.netAfterTax + e.netAfterTax
+  }), {revenue:0,cogs:0,rent:0,utilities:0,gross:0,grossProfit:0,netProfit:0,tax:0,netAfterTax:0, otherExpenses:0});
+}
+
+// ── CHART REGISTRY ──
+const chartInstances = {};
+function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
+function makeChart(id, config) {
+  destroyChart(id);
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  chartInstances[id] = new Chart(canvas, config);
+  return chartInstances[id];
+}
+
+const BRANCH_COLORS = ['#3D5A73','#2A7D4F','#B8760A','#7B5EA7','#D63B3B','#15161A'];
+function branchColor(branchId) {
+  const br = db.branches.find(b=>b.id===branchId);
+  return br ? br.color : '#6B6E73';
+}
+function branchName(branchId) {
+  const br = db.branches.find(b=>b.id===branchId);
+  return br ? br.name : branchId;
+}
+
+const baseChartOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { font: { family: 'Inter', size: 11 }, boxWidth: 10, padding: 12 } } },
+  scales: {
+    x: { grid: { color: '#ECEDEE' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#6B6E73' } },
+    y: { grid: { color: '#ECEDEE' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#6B6E73', callback: v => fmt(v) } }
+  }
+};
+
+// ══════════════════════════════════════════════════════════
+// POPULATE FILTERS
+// ══════════════════════════════════════════════════════════
+
+function populateFilters() {
+  const years = [...new Set(db.entries.map(e=>e.year))].sort();
+  ['overviewYear','revYear','profYear'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '<option value="all">All</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    el.value = years[years.length-1] || 'all';
+  });
+  const months = [...new Set(db.entries.map(e=>e.month))].sort((a,b)=>a-b);
+  ['overviewMonth','revMonth','profMonth'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '<option value="all">All</option>' + months.map(m=>`<option value="${m}">${MONTHS_FULL[m-1]}</option>`).join('');
+  });
+
+  // Entry branch selector
+  const eb = document.getElementById('entryBranch');
+  if (eb) eb.innerHTML = db.branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+
+  // Branch filter pills for overview
+  const bf = document.getElementById('overviewBranchFilter');
+  if (bf) {
+    bf.innerHTML = '<button class="branch-filter-btn active" onclick="toggleBranchFilter(this,\'all\')">All</button>' +
+      db.branches.map(b=>`<button class="branch-filter-btn" onclick="toggleBranchFilter(this,'${b.id}')" style="border-color:${b.color};color:${b.color}">${b.name}</button>`).join('');
+  }
+}
+
+let activeBranchFilter = 'all';
+function toggleBranchFilter(btn, id) {
+  activeBranchFilter = id;
+  document.querySelectorAll('.branch-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER OVERVIEW
+// ══════════════════════════════════════════════════════════
+
+function renderOverview() {
+  const year = document.getElementById('overviewYear')?.value || 'all';
+  const month = document.getElementById('overviewMonth')?.value || 'all';
+  const branchId = activeBranchFilter !== 'all' ? activeBranchFilter : null;
+  const entries = filterEntries({ year, month, branchId: branchId||undefined });
+  const sum = sumEntries(entries);
+
+  // Get previous period for deltas
+  const prevYear = year !== 'all' ? String(parseInt(year)-1) : 'all';
+  const prevEntries = filterEntries({ year: prevYear, month, branchId: branchId||undefined });
+  const prevSum = sumEntries(prevEntries);
+  const delta = (cur, prev) => prev > 0 ? ((cur-prev)/prev*100).toFixed(1) : null;
+
+  const kpiEl = document.getElementById('overviewKPIs');
+  kpiEl.innerHTML = [
+    { label: 'Total Revenue', val: sum.revenue, prev: prevSum.revenue, sub: 'Gross Sales' },
+    { label: 'Gross Profit', val: sum.grossProfit, prev: prevSum.grossProfit, sub: 'Revenue minus COGS' },
+    { label: 'Net Profit', val: sum.netProfit, prev: prevSum.netProfit, sub: 'After all expenses' },
+    { label: 'Net Margin', val: sum.revenue>0?(sum.netProfit/sum.revenue*100):0, prev: prevSum.revenue>0?(prevSum.netProfit/prevSum.revenue*100):0, sub: 'Profitability %', pct: true }
+  ].map(k => {
+    const d = delta(k.val, k.prev);
+    const up = d !== null ? parseFloat(d) > 0 : null;
+    return `<div class="card">
+      <div class="card-title">${k.label}</div>
+      <div class="kpi-value mt-8">${k.pct ? k.val.toFixed(1)+'%' : fmt(k.val)}</div>
+      <div class="kpi-label">${k.sub}</div>
+      ${d !== null ? `<div class="kpi-delta ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(d)}% vs prior yr</div>` : '<div class="kpi-delta flat">— No prior data</div>'}
+    </div>`;
+  }).join('');
+
+  // Revenue by branch bar
+  const branchTotals = db.branches.map(br => ({
+    name: br.name, color: br.color,
+    rev: sumEntries(filterEntries({ year, month, branchId: br.id })).revenue
+  }));
+
+  makeChart('overviewRevChart', {
+    type: 'bar',
+    data: {
+      labels: branchTotals.map(b=>b.name),
+      datasets: [{ label: 'Revenue', data: branchTotals.map(b=>b.rev), backgroundColor: branchTotals.map(b=>b.color+'CC'), borderColor: branchTotals.map(b=>b.color), borderWidth: 1.5, borderRadius: 4 }]
+    },
+    options: { ...baseChartOpts, plugins: { legend: { display: false } } }
+  });
+  document.getElementById('revBadge').textContent = fmt(sum.revenue);
+
+  // Trend line by month
+  const allYears = [...new Set(db.entries.map(e=>e.year))].sort();
+  const trendYear = year !== 'all' ? year : String(allYears[allYears.length-1]);
+  const trendData = MONTHS.map((m,i) => sumEntries(filterEntries({ year: trendYear, month: String(i+1), branchId: branchId||undefined })).revenue);
+  makeChart('overviewTrendChart', {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: [{ label: 'Revenue', data: trendData, borderColor: '#3D5A73', backgroundColor: 'rgba(61,90,115,0.08)', borderWidth: 2, fill: true, tension: 0.4, pointRadius: 3 }]
+    },
+    options: baseChartOpts
+  });
+
+  // Margin by branch
+  const marginData = db.branches.map(br => {
+    const s = sumEntries(filterEntries({ year, month, branchId: br.id }));
+    return s.revenue > 0 ? (s.grossProfit/s.revenue*100) : 0;
+  });
+  makeChart('overviewMarginChart', {
+    type: 'bar',
+    data: {
+      labels: db.branches.map(b=>b.name),
+      datasets: [{ label: 'Gross Margin %', data: marginData, backgroundColor: db.branches.map(b=>b.color+'99'), borderColor: db.branches.map(b=>b.color), borderWidth: 1.5, borderRadius: 4 }]
+    },
+    options: { ...baseChartOpts, scales: { ...baseChartOpts.scales, y: { ...baseChartOpts.scales.y, ticks: { ...baseChartOpts.scales.y.ticks, callback: v=>v.toFixed(0)+'%' } } } }
+  });
+
+  // Expense donut
+  makeChart('overviewExpChart', {
+    type: 'doughnut',
+    data: {
+      labels: ['COGS','Rent','Utilities','Other'],
+      datasets: [{ data: [sum.cogs,sum.rent,sum.utilities,sum.otherExpenses], backgroundColor: ['#3D5A73','#2A7D4F','#B8760A','#686E73'], borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family:'Inter', size:11 }, boxWidth:10 } } }, cutout: '60%' }
+  });
+
+  // Net profit donut
+  const netPositive = Math.max(0, sum.netProfit);
+  const netNegative = Math.max(0, -sum.netProfit);
+  makeChart('overviewProfitChart', {
+    type: 'doughnut',
+    data: {
+      labels: db.branches.map(b=>b.name),
+      datasets: [{ data: db.branches.map(br => Math.max(0, sumEntries(filterEntries({year,month,branchId:br.id})).netProfit)), backgroundColor: db.branches.map(b=>b.color+'CC'), borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: {family:'Inter',size:11}, boxWidth:10 } } }, cutout: '60%' }
+  });
+
+  // Decision Banner
+  renderDecisionBanner(sum, entries);
+  renderInsightFeed(entries, sum);
+}
+
+// ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// FASHION ACCESSORY INDUSTRY BENCHMARKS
+// ══════════════════════════════════════════════════════════
+const FASHION_BENCH = {
+  grossMargin:    { target: 55, danger: 40, elite: 65,  label: 'Gross Margin %' },
+  netMargin:      { target: 12, danger: 5,  elite: 20,  label: 'Net Margin %' },
+  cogsRatio:      { target: 35, danger: 50, elite: 28,  label: 'COGS/Revenue %', inv: true },
+  rentRatio:      { target: 8,  danger: 15, elite: 5,   label: 'Rent/Revenue %', inv: true },
+  opexRatio:      { target: 30, danger: 45, elite: 22,  label: 'OpEx/Revenue %', inv: true },
+  contribMargin:  { target: 65, danger: 50, elite: 72,  label: 'Contribution Margin %' },
+  revPerBranch:   { target: 150000, danger: 80000, elite: 250000, label: 'Rev/Branch/Month' },
+  operatingRatio: { target: 88, danger: 95, elite: 78,  label: 'Operating Cost %', inv: true },
+  breakEvenMonths:{ target: 3,  danger: 6,  elite: 1,   label: 'Months to Break Even', inv: true },
+  inventoryHealth:{ target: 4,  danger: 2,  elite: 6,   label: 'Inventory Turns/Yr (est)' },
+};
+
+// ══════════════════════════════════════════════════════════
+// INTELLIGENCE ENGINE — ALL DECISION COMBINATIONS
+// ══════════════════════════════════════════════════════════
+
+function analyzeData(entries, sum) {
+  const insights = [], risks = [], opportunities = [], decisions = [];
+  const branchSums = db.branches.map(br => ({ br, s: sumEntries(filterEntries({ branchId: br.id })) }));
+  const activeBranches = branchSums.filter(b => b.s.revenue > 0);
+  const totalRev = sum.revenue;
+  const netMargin   = totalRev > 0 ? sum.netProfit  / totalRev * 100 : 0;
+  const grossMargin = totalRev > 0 ? sum.grossProfit / totalRev * 100 : 0;
+  const cogsRatio   = totalRev > 0 ? sum.cogs        / totalRev * 100 : 0;
+  const rentRatio   = totalRev > 0 ? sum.rent        / totalRev * 100 : 0;
+  const opexRatio   = totalRev > 0 ? (sum.rent + sum.utilities + sum.otherExpenses) / totalRev * 100 : 0;
+  const contribMargin = totalRev > 0 ? (totalRev - sum.cogs) / totalRev * 100 : 0;
+  const revPerBranch  = activeBranches.length > 0 ? totalRev / activeBranches.length : 0;
+  const bestBr  = activeBranches.sort((a,b) => (b.s.revenue>0?b.s.netProfit/b.s.revenue:0) - (a.s.revenue>0?a.s.netProfit/a.s.revenue:0))[0];
+  const worstBr = [...activeBranches].sort((a,b) => (a.s.revenue>0?a.s.netProfit/a.s.revenue:0) - (b.s.revenue>0?b.s.netProfit/b.s.revenue:0))[0];
+  const topRevBr = [...activeBranches].sort((a,b) => b.s.revenue - a.s.revenue)[0];
+  const branchRevs = activeBranches.map(b => b.s.revenue);
+  const revConcentration = topRevBr && totalRev > 0 ? topRevBr.s.revenue / totalRev * 100 : 0;
+
+  // ── Monthly trend (last 3 active months) ──
+  const allYears = [...new Set(db.entries.map(e => e.year))].sort();
+  const lastYear = allYears[allYears.length - 1] || 2024;
+  const monthlyTotals = Array.from({length: 12}, (_,i) =>
+    sumEntries(filterEntries({ year: String(lastYear), month: String(i+1) }))
+  );
+  const activeMonths = monthlyTotals.filter(m => m.revenue > 0);
+  const last3 = activeMonths.slice(-3);
+  const revTrend3 = last3.length >= 2
+    ? (last3[last3.length-1].revenue - last3[0].revenue) / last3[0].revenue * 100 : 0;
+  const profitTrend3 = last3.length >= 2
+    ? last3[last3.length-1].netProfit - last3[0].netProfit : 0;
+
+  // ── YoY ──
+  const prevYearEntries = filterEntries({ year: String(lastYear - 1) });
+  const prevYearSum = sumEntries(prevYearEntries);
+  const yoyRev    = prevYearSum.revenue > 0 ? (sum.revenue - prevYearSum.revenue) / prevYearSum.revenue * 100 : null;
+  const yoyProfit = prevYearSum.revenue > 0 ? sum.netProfit - prevYearSum.netProfit : null;
+
+  // ── Peak month ──
+  const peakMonthIdx = monthlyTotals.map((m,i) => ({ rev: m.revenue, i })).sort((a,b) => b.rev - a.rev)[0]?.i ?? -1;
+  const lowestMonthIdx = monthlyTotals.map((m,i) => ({ rev: m.revenue, i })).filter(m => m.rev > 0).sort((a,b) => a.rev - b.rev)[0]?.i ?? -1;
+
+  const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // ══════════════════════════════════════════════
+  // DECISION COMBINATIONS
+  // ══════════════════════════════════════════════
+
+  if (totalRev === 0) {
+    // D0: No data
+    decisions.push({
+      severity: 'info',
+      bg: 'var(--blue-deep)',
+      headline: 'Add Your First Entry to Activate the Decision Engine',
+      what: 'The Decision Engine needs financial data to generate strategic analysis.',
+      why: 'All intelligence modules require at least 1 month of revenue and expense data across at least 1 branch.',
+      actions: [
+        'Click <strong>+ Entry</strong> in the top-right to add your first monthly record',
+        'Add COGS, Rent, Utilities, and Other Expenses for accurate margin calculation',
+        'Add at least 3 consecutive months across 1 branch to unlock trend analysis',
+        'Add all branches to unlock comparison and concentration analysis'
+      ]
+    });
+  }
+
+  // D1: CRITICAL — Net loss + declining revenue
+  if (totalRev > 0 && sum.netProfit < 0 && revTrend3 < -5) {
+    decisions.push({
+      severity: 'critical',
+      bg: '#3D1212',
+      headline: 'CRITICAL: Net Loss + Falling Revenue — Existential Risk',
+      what: `The business is operating at a <strong>net loss of ${fmt(Math.abs(sum.netProfit))}</strong>. Revenue has also declined <strong>${Math.abs(revTrend3).toFixed(1)}%</strong> over the last 3 months. You are simultaneously losing money and losing customers.`,
+      why: `Total expenses (${fmt(sum.gross)}) exceed revenue (${fmt(totalRev)}) while volume is shrinking. In fashion accessories, this is the most dangerous combination — losses compound faster as revenue falls.`,
+      actions: [
+        `Immediate: Identify your top 5 revenue-generating SKUs and protect their inventory at all costs`,
+        `Cut all non-essential expenses within 14 days — freeze reorders on low-margin items`,
+        `Audit each branch's rent contract — any branch where rent exceeds 15% of its revenue needs renegotiation or closure review`,
+        `Run an emergency clearance promotion on slow-moving stock to convert inventory to cash`,
+        `Set a 60-day survival target: reach ${fmt(sum.gross / Math.max(activeMonths.length, 1))} monthly revenue minimum (break-even)`
+      ]
+    });
+  }
+
+  // D2: Net loss + stable/growing revenue (cost problem, not demand problem)
+  if (totalRev > 0 && sum.netProfit < 0 && revTrend3 >= -5) {
+    decisions.push({
+      severity: 'critical',
+      bg: '#3D1212',
+      headline: 'CRITICAL: Profitable Sales, Unprofitable Business — Cost Structure Crisis',
+      what: `Revenue is ${revTrend3 >= 0 ? 'growing' : 'stable'} but the business is losing <strong>${fmt(Math.abs(sum.netProfit))}</strong>. Customers are buying — but your cost structure is destroying the profit before it reaches you.`,
+      why: `COGS ratio: <strong>${cogsRatio.toFixed(1)}%</strong> (target ≤35%). Rent ratio: <strong>${rentRatio.toFixed(1)}%</strong> (target ≤8%). OpEx ratio: <strong>${opexRatio.toFixed(1)}%</strong>. One or more of these is severely elevated.`,
+      actions: [
+        cogsRatio > 45 ? `Renegotiate with suppliers immediately — your COGS ratio of ${cogsRatio.toFixed(1)}% means markup is below 2.2×. Target minimum 2.5–3× markup on all accessories` : `Review COGS by SKU — some products may be pulling down your overall margin`,
+        rentRatio > 12 ? `Rent at ${rentRatio.toFixed(1)}% of revenue is a structural problem. Approach landlords with your sales data and request a revenue-share arrangement or reduction` : `Rent is acceptable — focus cost-cutting on COGS and other operating expenses`,
+        `Identify your 20% of products generating 80% of gross profit — reallocate inventory budget to those`,
+        `Remove or reduce any expense added in the last 12 months that doesn't directly generate revenue`,
+        `Target: reduce total expense ratio below 88% of revenue within 90 days`
+      ]
+    });
+  }
+
+  // D3: Thin margin (0–5%) — in danger zone
+  if (totalRev > 0 && netMargin >= 0 && netMargin < 5) {
+    decisions.push({
+      severity: 'risk',
+      bg: '#2D1A00',
+      headline: `RISK: Net Margin at ${netMargin.toFixed(1)}% — One Bad Month Away From Loss`,
+      what: `Net margin of <strong>${netMargin.toFixed(1)}%</strong> is critically thin. Fashion accessories require minimum <strong>8–12% net margin</strong> to sustain healthy operations. Your current buffer cannot absorb any cost increase or revenue dip.`,
+      why: `At ${netMargin.toFixed(1)}% margin, a 5% revenue decline or a single rent increase wipes out your profit entirely. This is not a sustainable operating position for a multi-branch retail business.`,
+      actions: [
+        `Raise average selling price by 8–12% on your top 30% of SKUs — test on 10 SKUs first to measure elasticity`,
+        `Introduce a tiered product range: premium items (65%+ GM) to lift portfolio margin`,
+        `Eliminate your 3 lowest-margin product categories or renegotiate their cost`,
+        `Target net margin of 8% as a minimum within 60 days, 12% within 6 months`,
+        `Do not open new branches or expand inventory until net margin exceeds 10%`
+      ]
+    });
+  }
+
+  // D4: Healthy margin + growing revenue — scale signal
+  if (totalRev > 0 && netMargin >= 12 && grossMargin >= 50 && revTrend3 >= 0) {
+    decisions.push({
+      severity: 'good',
+      bg: '#0F2A1A',
+      headline: 'STRONG: Business is Healthy and Growing — Strategic Expansion Window',
+      what: `Net margin: <strong>${netMargin.toFixed(1)}%</strong>. Gross margin: <strong>${grossMargin.toFixed(1)}%</strong>. Revenue trend: <strong>+${revTrend3.toFixed(1)}%</strong>. All core indicators are above industry benchmark.`,
+      why: `Gross margin above 50% in fashion accessories confirms strong pricing power and favorable supplier positioning. This is the window to scale before competitors close the gap.`,
+      actions: [
+        bestBr ? `Double down on ${bestBr.br.name} — it is your highest-margin operation. Expand its inventory by 20–30% first` : `Identify your top branch and expand its inventory capacity`,
+        `Introduce a premium product tier (Limited/Signature) with 65%+ gross margin targeting your repeat customers`,
+        `Build a 3-month operating expense reserve before committing to any new branch lease`,
+        `Launch Shopee / TikTok Shop channel — fashion accessories have strong digital conversion with zero rent overhead`,
+        `Lock in current supplier pricing with volume commitments before demand-driven cost increases`
+      ]
+    });
+  }
+
+  // D5: Revenue growing but margin eroding
+  if (totalRev > 0 && revTrend3 > 5 && netMargin < grossMargin * 0.22) {
+    decisions.push({
+      severity: 'warn',
+      bg: '#2D1A00',
+      headline: 'WARNING: Revenue Growing, Margins Eroding — Scaling the Wrong Way',
+      what: `Revenue is up <strong>+${revTrend3.toFixed(1)}%</strong> but net margin has compressed to <strong>${netMargin.toFixed(1)}%</strong>. You are getting bigger without getting more profitable.`,
+      why: `In fashion accessories, growth-driven cost expansion is a hidden trap. OpEx ratio of <strong>${opexRatio.toFixed(1)}%</strong> suggests overhead is growing faster than revenue — meaning every new peso of sales contributes less profit than before.`,
+      actions: [
+        `Audit every expense added in the last 6 months — require each to justify its revenue contribution`,
+        `Set a hard rule: no new overhead unless gross margin on incremental revenue stays above 50%`,
+        `Review supplier terms — volume growth should earn you better COGS rates, not worse`,
+        `Track contribution margin per SKU monthly — kill products where CM% is declining`,
+        `Target: net margin must recover to minimum 10% before any further growth investment`
+      ]
+    });
+  }
+
+  // D6: Single branch dragging the system
+  if (activeBranches.length > 1 && worstBr && bestBr && worstBr.s.revenue > 0) {
+    const worstNM = worstBr.s.revenue > 0 ? worstBr.s.netProfit / worstBr.s.revenue * 100 : 0;
+    const bestNM  = bestBr.s.revenue  > 0 ? bestBr.s.netProfit  / bestBr.s.revenue  * 100 : 0;
+    if (worstNM < 0 && bestNM > 5) {
+      decisions.push({
+        severity: 'risk',
+        bg: '#1E1530',
+        headline: `RISK: ${worstBr.br.name} Is Losing Money — Draining the System`,
+        what: `<strong>${worstBr.br.name}</strong> has a net margin of <strong>${worstNM.toFixed(1)}%</strong> (net loss: ${fmt(Math.abs(worstBr.s.netProfit))}) while <strong>${bestBr.br.name}</strong> earns ${bestNM.toFixed(1)}%net margin. The gap is ${(bestNM - worstNM).toFixed(1)} percentage points.`,
+        why: `A loss-making branch consumes the profit generated by your healthy branches. Capital that should fund growth in ${bestBr.br.name} is being redirected to cover ${worstBr.br.name}'s shortfall.`,
+        actions: [
+          `Set a hard 90-day ultimatum for ${worstBr.br.name}: reach ${fmt(worstBr.s.totalExp / Math.max(activeMonths.length,1) * 1.1)} monthly revenue or initiate restructure`,
+          `Transfer your top 20 best-selling SKUs from ${bestBr.br.name} to ${worstBr.br.name} for 60 days to test if it is an inventory problem`,
+          `Review ${worstBr.br.name}'s rent — if >12% of its revenue, renegotiate immediately`,
+          `Benchmark ${worstBr.br.name}'s foot traffic and average transaction value vs other branches`,
+          `If no improvement in 90 days: controlled closure plan, redirect all inventory and staff to profitable branches`
+        ]
+      });
+    }
+  }
+
+  // D7: Revenue concentration risk
+  if (activeBranches.length >= 2 && revConcentration > 60) {
+    decisions.push({
+      severity: 'warn',
+      bg: '#1C1E30',
+      headline: `CAUTION: ${revConcentration.toFixed(0)}% of Revenue in One Branch — Concentration Risk`,
+      what: `<strong>${topRevBr?.br?.name}</strong> generates ${revConcentration.toFixed(0)}% of your total revenue. The rest of your branches contribute only ${(100 - revConcentration).toFixed(0)}% combined.`,
+      why: `Single-branch concentration is a critical vulnerability. Mall policy change, lease termination, or a local competitor can eliminate your revenue overnight. Resilient retail operations target no branch exceeding 50% of total revenue.`,
+      actions: [
+        `Replicate ${topRevBr?.br?.name}'s top 20 SKUs and merchandising layout in all other branches`,
+        `Set a 6-month target: reduce ${topRevBr?.br?.name}'s revenue share to below 55%`,
+        `Launch an online channel (Shopee/TikTok) as a non-location revenue stream`,
+        `Investigate why weaker branches underperform — product mix, visibility, or staff conversion rates`
+      ]
+    });
+  }
+
+  // D8: YoY decline
+  if (yoyRev !== null && yoyRev < -10) {
+    decisions.push({
+      severity: 'critical',
+      bg: '#3D1212',
+      headline: `CRITICAL: Year-over-Year Revenue Down ${Math.abs(yoyRev).toFixed(1)}% — Business is Contracting`,
+      what: `Revenue in ${lastYear} is <strong>${Math.abs(yoyRev).toFixed(1)}% lower</strong> than ${lastYear - 1} (${fmt(prevYearSum.revenue)} → ${fmt(sum.revenue)}). This is structural contraction, not a seasonal dip.`,
+      why: `A >10% YoY revenue decline in fashion accessories signals either market share loss, product-market fit erosion, or external competitive disruption. Without intervention, contraction compounds annually.`,
+      actions: [
+        `Audit your product portfolio by SKU — which categories declined most? Are trends shifting?`,
+        `Survey your customer base or observe top competitors — is there a new product type capturing demand?`,
+        `Test 5–10 new product categories at low inventory risk (5 units each) to find new demand pockets`,
+        `Fashion accessories have strong TikTok Shop traction in the Philippines — launch digital channel to expand addressable market`,
+        `Review pricing competitiveness — if customers are buying similar items cheaper elsewhere, identify and respond`
+      ]
+    });
+  }
+
+  // D9: YoY strong growth
+  if (yoyRev !== null && yoyRev > 20) {
+    decisions.push({
+      severity: 'good',
+      bg: '#0F2A1A',
+      headline: `EXCELLENT: +${yoyRev.toFixed(1)}% Year-over-Year Revenue Growth — Protect and Accelerate`,
+      what: `Revenue grew from ${fmt(prevYearSum.revenue)} to ${fmt(sum.revenue)} — a ${fmt(sum.revenue - prevYearSum.revenue)} absolute gain in 12 months. This is above the 8–12% fashion retail growth benchmark.`,
+      why: `Strong YoY growth creates a compounding advantage window. The decisions made in the next 6 months will determine whether this is a sustainable trajectory or a one-time spike.`,
+      actions: [
+        `Identify which branches and SKUs drove the growth — reallocate budget to top performers`,
+        `Lock in supplier pricing now before demand-driven cost increases erode your margin`,
+        `Build a 3-month operating expense cash reserve before scaling further`,
+        `Establish inventory reorder triggers to prevent stockouts during peak demand periods`,
+        yoyRev > 35 ? `Growth above 35% signals potential for a new branch — begin location scouting with a strict rent-to-projected-revenue test of ≤8%` : ``
+      ].filter(Boolean)
+    });
+  }
+
+  // D10: Rent crisis — any branch over 15%
+  if (rentRatio > 15 && totalRev > 0) {
+    decisions.push({
+      severity: 'risk',
+      bg: '#2D1500',
+      headline: `RISK: Rent at ${rentRatio.toFixed(1)}% of Revenue — 87% Above Safe Threshold`,
+      what: `Total rent is <strong>${fmt(sum.rent)}</strong> — representing <strong>${rentRatio.toFixed(1)}%</strong> of revenue. Fashion accessories benchmark: 6–10%. You are paying ${fmt(sum.rent - totalRev * 0.08)} more in rent than industry-healthy levels.`,
+      why: `Every percentage point of rent above 10% directly destroys net margin. At ${rentRatio.toFixed(1)}%, your rent burden alone prevents you from reaching the 12% net margin target regardless of all other decisions.`,
+      actions: [
+        `Present your revenue data to each landlord and request a performance-linked rent structure`,
+        `Calculate the revenue increase needed to make rent acceptable: target ${fmt(sum.rent / 0.08)} monthly gross revenue`,
+        `For lease renewals: never sign where fixed rent exceeds 8% of projected monthly revenue`,
+        `Evaluate subletting unused floor space if mall policies allow`,
+        `If revenue cannot reach the required level in 90 days, initiate lease exit or renegotiation`
+      ]
+    });
+  }
+
+  // D11: COGS too high — supplier/pricing problem
+  if (cogsRatio > 45 && totalRev > 0) {
+    decisions.push({
+      severity: 'risk',
+      bg: '#1E1A30',
+      headline: `RISK: COGS at ${cogsRatio.toFixed(1)}% — Pricing Power is Weak or Supplier Costs Too High`,
+      what: `Cost of Goods Sold represents <strong>${cogsRatio.toFixed(1)}%</strong> of revenue, leaving only a ${(100 - cogsRatio).toFixed(1)}% gross margin. Fashion accessories should achieve 55–65% gross margin. Your current markup is only ${(100/(cogsRatio/100)).toFixed(1)}× landed cost.`,
+      why: `High COGS in fashion accessories signals either systematic under-pricing or unfavorable supplier terms. Industry standard is 2.5–3× markup minimum on accessories. Below 2.2× is a structural pricing problem.`,
+      actions: [
+        `Audit your markup per product category — list every SKU where markup is below 2.5× and either reprice or discontinue`,
+        `Consolidate reorder volumes to negotiate supplier discounts — target 5–10% COGS reduction on next order`,
+        `Introduce product bundles to increase average transaction value without changing COGS`,
+        `Test a 15% price increase on your top 20 best-selling SKUs — measure unit volume impact before rolling out`,
+        `If specific product categories consistently achieve <40% gross margin, exit those categories`
+      ]
+    });
+  }
+
+  // D12: Seasonal opportunity (peak month detected)
+  if (peakMonthIdx >= 0 && totalRev > 0) {
+    const peakRev = monthlyTotals[peakMonthIdx].revenue;
+    const avgRev = activeMonths.reduce((a,m) => a + m.revenue, 0) / Math.max(activeMonths.length, 1);
+    const peakPremium = avgRev > 0 ? (peakRev - avgRev) / avgRev * 100 : 0;
+    if (peakPremium > 20) {
+      decisions.push({
+        severity: 'good',
+        bg: '#0F2A1A',
+        headline: `OPPORTUNITY: ${MONTHS_FULL[peakMonthIdx]} is Your Peak Season — Maximize It`,
+        what: `${MONTHS_FULL[peakMonthIdx]} generates <strong>${peakPremium.toFixed(0)}% above your monthly average</strong> in revenue (${fmt(peakRev)} vs avg ${fmt(avgRev)}). This is your highest-value selling window.`,
+        why: `In Philippine fashion accessories, peak months are typically driven by Valentine's Day, Christmas, or graduation season. Maximizing peak-season revenue has an outsized impact on annual profitability because the fixed cost base remains the same.`,
+        actions: [
+          `Begin inventory build-up 4–5 weeks before ${MONTHS_FULL[peakMonthIdx]} — ensure you have 150% of normal stock on your top 20 SKUs`,
+          `Hire temporary staff for ${MONTHS_FULL[peakMonthIdx]} to maximize conversion from elevated foot traffic`,
+          `Run a targeted promotion in the 2 weeks before peak — buy-2-get-1 on accessories with 60%+ gross margin`,
+          lowestMonthIdx >= 0 ? `Plan a clearance event in ${MONTHS_FULL[lowestMonthIdx]} (your slowest month) to convert slow inventory to cash before peak-season reorders` : `Plan clearance events in your slowest months to fund peak-season inventory`
+        ]
+      });
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // INSIGHT ENGINE — Patterns & Anomalies
+  // ══════════════════════════════════════════════
+
+  if (totalRev > 0) {
+    if (grossMargin < FASHION_BENCH.grossMargin.danger)
+      insights.push({ type: 'anomaly', text: `Gross margin of <strong>${grossMargin.toFixed(1)}%</strong> is below the 40% danger floor for fashion accessories. The 55% industry target requires either a COGS reduction or an average price increase of ${((0.55 - grossMargin/100) / (1 - grossMargin/100) * 100).toFixed(0)}%.` });
+
+    if (grossMargin >= FASHION_BENCH.grossMargin.elite)
+      insights.push({ type: 'positive', text: `Gross margin of <strong>${grossMargin.toFixed(1)}%</strong> is above the 65% elite threshold. Your pricing and supplier positioning are exceptional — the focus must now shift to operating cost discipline.` });
+
+    if (activeBranches.length > 1) {
+      const revRatio = Math.max(...branchRevs) / Math.min(...branchRevs);
+      if (revRatio > 2.5) {
+        insights.push({ type: 'anomaly', text: `Branch revenue disparity is <strong>${revRatio.toFixed(1)}×</strong> — your best branch generates ${revRatio.toFixed(1)} times more than your weakest. This gap signals a product mix, location, or management effectiveness problem at the underperforming branch.` });
+      }
+    }
+
+    const profitableMonthCount = activeMonths.filter(m => m.netProfit > 0).length;
+    if (profitableMonthCount < activeMonths.length * 0.6 && activeMonths.length >= 4)
+      insights.push({ type: 'anomaly', text: `Only <strong>${profitableMonthCount} of ${activeMonths.length} months</strong> are profitable (${(profitableMonthCount/activeMonths.length*100).toFixed(0)}%). Inconsistent profitability signals either high expense volatility or severe seasonal revenue gaps not covered by cost reduction.` });
+
+    if (revTrend3 < -10)
+      insights.push({ type: 'anomaly', text: `Revenue has declined <strong>${Math.abs(revTrend3).toFixed(1)}%</strong> over the last 3 months. A sustained 3-month decline is a trend, not a fluctuation. Immediate investigation into root cause is required.` });
+
+    if (profitTrend3 < 0 && revTrend3 > 0)
+      insights.push({ type: 'anomaly', text: `Revenue is growing but profits are falling — cost expansion is outpacing revenue growth. This is a structural margin erosion pattern. Every peso of new revenue is generating less profit than before.` });
+  }
+
+  // ══════════════════════════════════════════════
+  // RISK ENGINE
+  // ══════════════════════════════════════════════
+
+  if (totalRev > 0) {
+    if (sum.netProfit < 0)
+      risks.push({ type: 'risk', text: `Net loss of <strong>${fmt(Math.abs(sum.netProfit))}</strong>. Total expenses (${fmt(sum.gross)}) exceed revenue (${fmt(totalRev)}) by ${((sum.gross - totalRev)/totalRev*100).toFixed(1)}%. Without immediate intervention, cash will be depleted.` });
+
+    if (netMargin >= 0 && netMargin < 5 && totalRev > 0)
+      risks.push({ type: 'warning', text: `Net margin of <strong>${netMargin.toFixed(1)}%</strong> provides no buffer for disruption. A 5% revenue decline or a ₱5,000 rent increase per branch would eliminate all profit.` });
+
+    if (rentRatio > FASHION_BENCH.rentRatio.danger)
+      risks.push({ type: 'risk', text: `Rent represents <strong>${rentRatio.toFixed(1)}%</strong> of revenue — ${(rentRatio / FASHION_BENCH.rentRatio.target * 100 - 100).toFixed(0)}% above the 8% benchmark. You are paying ${fmt(sum.rent - totalRev * FASHION_BENCH.rentRatio.target / 100)} more in rent than an optimally structured competitor.` });
+
+    if (cogsRatio > FASHION_BENCH.cogsRatio.danger)
+      risks.push({ type: 'risk', text: `COGS ratio of <strong>${cogsRatio.toFixed(1)}%</strong> exceeds the 50% danger threshold. Your current markup of ${(100/(cogsRatio/100)).toFixed(2)}× is below the minimum 2.5× required for healthy fashion accessory margins.` });
+
+    if (activeBranches.length > 1 && worstBr) {
+      const worstNM = worstBr.s.revenue > 0 ? worstBr.s.netProfit / worstBr.s.revenue * 100 : 0;
+      if (worstNM < -5)
+        risks.push({ type: 'risk', text: `<strong>${worstBr.br.name}</strong> has a net margin of ${worstNM.toFixed(1)}% — a monthly loss of ${fmt(Math.abs(worstBr.s.netProfit / Math.max(activeMonths.length, 1)))}. This branch is actively draining cash from your profitable operations.` });
+    }
+
+    const taxRegime = db.settings.taxRegime || db.settings.tax;
+    if (taxRegime === 'vat') {
+      const vatLiab = totalRev * 0.12 / 1.12;
+      risks.push({ type: 'warning', text: `Estimated VAT output liability: <strong>${fmt(vatLiab)}</strong>. Monthly BIR Form 2550M filing is required. Late filing incurs 25% surcharge + 12% annual interest — compounding exposure that can become catastrophic quickly.` });
+    }
+    if (taxRegime === 'none' && totalRev > 3000000)
+      risks.push({ type: 'risk', text: `Revenue of ${fmt(totalRev)} likely exceeds BIR VAT registration threshold of ₱3,000,000. Operating as exempt may constitute tax non-compliance. Consult a BIR-registered accountant immediately.` });
+  }
+
+  // ══════════════════════════════════════════════
+  // OPPORTUNITY ENGINE
+  // ══════════════════════════════════════════════
+
+  if (totalRev > 0 && bestBr) {
+    const bestNM = bestBr.s.revenue > 0 ? bestBr.s.netProfit / bestBr.s.revenue * 100 : 0;
+    opportunities.push({ text: `<strong>${bestBr.br.name}</strong> is your highest net-margin branch at <strong>${bestNM.toFixed(1)}%</strong>. Document its product mix, merchandising, and staff conversion rate — this is your replication blueprint for all other branches.` });
+  }
+
+  if (netMargin > 10 && totalRev > 0)
+    opportunities.push({ text: `At <strong>${netMargin.toFixed(1)}%</strong> net margin, a ${fmt(totalRev * 0.3)} inventory expansion could generate approximately ${fmt(totalRev * 0.3 * netMargin / 100)} in additional net profit — without opening a new branch.` });
+
+  if (peakMonthIdx >= 0 && totalRev > 0) {
+    opportunities.push({ text: `Your peak season is <strong>${MONTHS_FULL[peakMonthIdx]}</strong>. A structured pre-season inventory build (150% of normal stock on top SKUs) 4 weeks before could increase peak-season revenue by an estimated 12–18%.` });
+  }
+
+  opportunities.push({ text: `Fashion accessories have strong conversion on <strong>Shopee and TikTok Shop</strong> in the Philippines. An online channel using your existing product range can add 20–35% incremental revenue with zero additional rent cost.` });
+
+  if (activeBranches.length >= 2 && grossMargin >= 50)
+    opportunities.push({ text: `Introduce a <strong>premium product tier</strong> (limited edition / signature items) priced at 2–3× your standard range with 65%+ gross margin. Even 10% of revenue from this tier adds ${fmt(totalRev * 0.10 * 0.65 / 100 * totalRev / totalRev)} in incremental gross profit per peso.` });
+
+  return { insights, risks, opportunities, decisions, netMargin, grossMargin, cogsRatio, rentRatio, opexRatio, contribMargin, revPerBranch, branchSums, activeBranches, revConcentration, revTrend3, yoyRev, lastYear, monthlyTotals, activeMonths, peakMonthIdx, lowestMonthIdx };
+}
+
+function renderDecisionBanner(sum, entries) {
+  const el = document.getElementById('decisionBanner');
+  if (!el) return;
+  const analysis = analyzeData(entries, sum);
+  const { decisions, netMargin, grossMargin } = analysis;
+
+  if (!decisions || decisions.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+
+  // Show the highest-priority decision as the banner
+  const severityOrder = { critical: 0, risk: 1, warn: 2, good: 3, info: 4 };
+  const sorted = [...decisions].sort((a, b) => (severityOrder[a.severity] ?? 5) - (severityOrder[b.severity] ?? 5));
+  const top = sorted[0];
+
+  const bgMap = {
+    critical: '#3D1212',
+    risk:     '#1C2E3D',
+    warn:     '#2D1A00',
+    good:     '#0A2418',
+    info:     'var(--ink)'
+  };
+  const dotMap = {
+    critical: '#E05555',
+    risk:     'var(--orange)',
+    warn:     'var(--orange)',
+    good:     '#4DC890',
+    info:     'rgba(255,255,255,0.4)'
+  };
+  const severityLabel = {
+    critical: '🔴 CRITICAL ALERT',
+    risk:     '🟠 RISK DETECTED',
+    warn:     '🟡 CAUTION',
+    good:     '🟢 STRONG SIGNAL',
+    info:     '◉ DECISION ENGINE'
+  };
+
+  el.innerHTML = `
+  <div class="decision-card" style="background:${bgMap[top.severity]||'var(--ink)'}">
+    <div class="decision-label">
+      <span style="width:7px;height:7px;border-radius:50%;background:${dotMap[top.severity]};flex-shrink:0;display:inline-block;margin-right:8px"></span>
+      ${severityLabel[top.severity]||'DECISION ENGINE'} &nbsp;·&nbsp; ${decisions.length} Signal${decisions.length!==1?'s':''} Detected
+    </div>
+    <div class="decision-text" style="font-family:var(--heading);font-size:16px;font-weight:700;margin-bottom:10px;color:white">${top.headline}</div>
+    <div class="decision-text">${top.what}</div>
+    ${top.why ? `<div class="decision-text" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.12);font-size:12.5px;opacity:0.75">${top.why}</div>` : ''}
+    <div class="decision-actions" style="margin-top:14px">
+      ${top.actions.slice(0,3).map((a,i)=>`
+        <div class="decision-action-item">
+          <span class="action-num">${String(i+1).padStart(2,'0')}</span>
+          <span>${a}</span>
+        </div>`).join('')}
+    </div>
+    ${decisions.length > 1 ? `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);display:flex;gap:8px;flex-wrap:wrap">
+      ${sorted.slice(1).map(d=>`<span style="font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:3px 10px;border-radius:4px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);cursor:pointer" onclick="switchTab('intelligence')">${d.headline.split(':')[0].trim()}</span>`).join('')}
+    </div>` : ''}
+  </div>`;
+}
+
+function renderInsightFeed(entries, sum) {
+  const analysis = analyzeData(entries, sum);
+  const el = document.getElementById('overviewInsightFeed');
+  if (!el) return;
+
+  const all = [
+    ...analysis.insights.map(i=>({ cls: i.type==='positive'?'intel-block opportunity':'intel-block', tag: i.type==='anomaly'?'ANOMALY DETECTED':i.type==='positive'?'POSITIVE SIGNAL':'PATTERN DETECTED', text: i.text })),
+    ...analysis.risks.map(r=>({ cls: r.type==='warning'?'intel-block warning':'intel-block risk', tag: r.type==='warning'?'WARNING':'RISK ALERT', text: r.text })),
+    ...analysis.opportunities.map(o=>({ cls: 'intel-block opportunity', tag: 'OPPORTUNITY', text: o.text }))
+  ];
+
+  if (all.length === 0) {
+    el.innerHTML = '<div class="text-mute text-sm" style="padding:12px 0">Add data to activate the Intelligence Feed.</div>';
+    return;
+  }
+  el.innerHTML = all.slice(0,6).map(i=>`
+    <div class="${i.cls}">
+      <div class="intel-label">${i.tag}</div>
+      <div class="intel-text">${i.text}</div>
+    </div>`).join('');
+}
+
+function renderIntelligencePage() {
+  const allEntries = filterEntries({});
+  const s = sumEntries(allEntries);
+  const analysis = analyzeData(allEntries, s);
+  const { decisions, insights, risks, opportunities } = analysis;
+
+  const bgMap = { critical:'#3D1212', risk:'#1C2E3D', warn:'#2D1A00', good:'#0A2418', info:'var(--ink)' };
+  const dotMap = { critical:'#E05555', risk:'var(--orange)', warn:'var(--orange)', good:'#4DC890', info:'rgba(255,255,255,0.4)' };
+  const tagMap = { critical:'🔴 CRITICAL', risk:'🟠 RISK', warn:'🟡 CAUTION', good:'🟢 OPPORTUNITY', info:'◉ INFO' };
+
+  // Decision Engine — all decisions shown
+  const de = document.getElementById('decisionEngine');
+  if (de) {
+    if (!decisions || decisions.length === 0) {
+      de.innerHTML = `<div class="decision-card">
+        <div class="decision-label"><span style="width:6px;height:6px;border-radius:50%;background:var(--orange);display:inline-block;margin-right:8px"></span>DECISION ENGINE WAITING</div>
+        <div class="decision-text" style="font-family:var(--heading);font-size:15px;font-weight:700;margin-bottom:8px;color:white">Add Financial Data to Activate</div>
+        <div class="decision-text">Enter at least 1 month of data to generate decisions.</div>
+      </div>`;
+    } else {
+      // Sort by severity priority
+      const order = { critical:0, risk:1, warn:2, good:3, info:4 };
+      const sorted = [...decisions].sort((a,b)=>(order[a.severity]??5)-(order[b.severity]??5));
+      de.innerHTML = sorted.map((d, idx) => `
+        <div class="decision-card" style="background:${bgMap[d.severity]||'var(--ink)'}; ${idx>0?'margin-top:12px':''}">
+          <div class="decision-label">
+            <span style="width:7px;height:7px;border-radius:50%;background:${dotMap[d.severity]};display:inline-block;margin-right:8px;flex-shrink:0"></span>
+            ${tagMap[d.severity]||'SIGNAL'} &nbsp;·&nbsp; Signal ${idx+1} of ${sorted.length}
+          </div>
+          <div class="decision-text" style="font-family:var(--heading);font-size:15px;font-weight:700;margin-bottom:8px;color:white;line-height:1.4">${d.headline}</div>
+          <div class="decision-text"><strong style="color:white">What is happening:</strong><br>${d.what}</div>
+          ${d.why ? `<div class="decision-text" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.12);font-size:12.5px"><strong style="color:rgba(255,255,255,0.9)">Why it is happening:</strong><br><span style="opacity:0.8">${d.why}</span></div>` : ''}
+          <div style="margin-top:4px;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,0.4);margin-bottom:10px;margin-top:12px">WHAT TO DO NEXT</div>
+          <div class="decision-actions">
+            ${d.actions.map((a,i)=>`
+              <div class="decision-action-item">
+                <span class="action-num">${String(i+1).padStart(2,'0')}</span>
+                <span>${a}</span>
+              </div>`).join('')}
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  // Insight Engine
+  const ie = document.getElementById('insightEngine');
+  if (ie) {
+    ie.innerHTML = insights.length > 0
+      ? insights.map(i=>`<div class="intel-block ${i.type==='positive'?'opportunity':''}">
+          <div class="intel-label">${i.type==='anomaly'?'ANOMALY DETECTED':i.type==='positive'?'POSITIVE SIGNAL':'PATTERN'}</div>
+          <div class="intel-text">${i.text}</div>
+        </div>`).join('')
+      : '<div class="text-mute text-sm" style="padding:8px 0">No anomalies detected with current data.</div>';
+  }
+
+  // Risk Engine
+  const re = document.getElementById('riskEngine');
+  if (re) {
+    re.innerHTML = risks.length > 0
+      ? risks.map(r=>`<div class="intel-block ${r.type==='warning'?'warning':'risk'}">
+          <div class="intel-label">${r.type==='warning'?'⚠ WARNING':'🔴 RISK ALERT'}</div>
+          <div class="intel-text">${r.text}</div>
+        </div>`).join('')
+      : '<div class="text-mute text-sm" style="padding:8px 0">No active risks detected.</div>';
+  }
+
+  // Opportunity Engine
+  const oe = document.getElementById('opportunityEngine');
+  if (oe) {
+    oe.innerHTML = opportunities.length > 0
+      ? opportunities.map(o=>`<div class="intel-block opportunity">
+          <div class="intel-label">🚀 OPPORTUNITY</div>
+          <div class="intel-text">${o.text}</div>
+        </div>`).join('')
+      : '<div class="text-mute text-sm" style="padding:8px 0">Add more data to surface opportunities.</div>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER REVENUE PAGE
+// ══════════════════════════════════════════════════════════
+
+function renderRevenue() {
+  const year = document.getElementById('revYear')?.value || 'all';
+  const month = document.getElementById('revMonth')?.value || 'all';
+  const entries = filterEntries({ year, month });
+  const sum = sumEntries(entries);
+
+  // KPIs
+  const prevEntries = filterEntries({ year: year!=='all'?String(parseInt(year)-1):'all', month });
+  const prevSum = sumEntries(prevEntries);
+  const kpiEl = document.getElementById('revKPIs');
+  kpiEl.innerHTML = [
+    { label: 'Total Revenue', val: sum.revenue, prev: prevSum.revenue },
+    { label: 'Avg Monthly Rev', val: entries.length>0?sum.revenue/entries.length:0, prev: prevEntries.length>0?prevSum.revenue/prevEntries.length:0 },
+    { label: 'Highest Month', val: Math.max(0,...entries.map(e=>e.revenue)), prev: Math.max(0,...prevEntries.map(e=>e.revenue)) },
+    { label: 'Best Branch Rev', val: Math.max(...db.branches.map(br=>sumEntries(filterEntries({year,month,branchId:br.id})).revenue)), prev: 0 }
+  ].map(k => {
+    const d = k.prev > 0 ? ((k.val-k.prev)/k.prev*100).toFixed(1) : null;
+    const up = d !== null ? parseFloat(d) >= 0 : null;
+    return `<div class="card">
+      <div class="card-title">${k.label}</div>
+      <div class="kpi-value mt-8">${fmt(k.val)}</div>
+      ${d!==null?`<div class="kpi-delta ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(d)}%</div>`:''}
+    </div>`;
+  }).join('');
+
+  // Trend
+  const trendYear = year!=='all'?year:String([...new Set(db.entries.map(e=>e.year))].sort().pop()||2024);
+  const datasets = db.branches.map(br => ({
+    label: br.name,
+    data: MONTHS.map((m,i)=>sumEntries(filterEntries({year:trendYear,month:String(i+1),branchId:br.id})).revenue),
+    borderColor: br.color, backgroundColor: br.color+'22', borderWidth: 2, tension: 0.4, fill: false, pointRadius: 3
+  }));
+  makeChart('revTrendChart', { type: 'line', data: { labels: MONTHS, datasets }, options: baseChartOpts });
+
+  // Branch bar
+  const branchRevs = db.branches.map(br=>({name:br.name,rev:sumEntries(filterEntries({year,month,branchId:br.id})).revenue,color:br.color}));
+  makeChart('revBranchBar', {
+    type: 'bar', data: { labels: branchRevs.map(b=>b.name), datasets: [{ label:'Revenue', data:branchRevs.map(b=>b.rev), backgroundColor:branchRevs.map(b=>b.color+'CC'), borderColor:branchRevs.map(b=>b.color), borderWidth:1.5, borderRadius:4 }] },
+    options: { ...baseChartOpts, plugins:{legend:{display:false}} }
+  });
+
+  // Share donut
+  makeChart('revShareChart', {
+    type: 'doughnut', data: { labels:branchRevs.map(b=>b.name), datasets:[{data:branchRevs.map(b=>b.rev),backgroundColor:branchRevs.map(b=>b.color+'CC'),borderWidth:0}] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},boxWidth:10}}}, cutout:'60%' }
+  });
+
+  // MoM growth
+  const momData = MONTHS.map((m,i) => {
+    const cur = sumEntries(filterEntries({year:trendYear,month:String(i+1)})).revenue;
+    if (i===0) return 0;
+    const prev = sumEntries(filterEntries({year:trendYear,month:String(i)})).revenue;
+    return prev>0 ? ((cur-prev)/prev*100) : 0;
+  });
+  makeChart('revMoMChart', {
+    type: 'bar', data: { labels:MONTHS, datasets:[{label:'MoM Growth %',data:momData,backgroundColor:momData.map(v=>v>=0?'#2A7D4F99':'#D63B3B99'),borderColor:momData.map(v=>v>=0?'#2A7D4F':'#D63B3B'),borderWidth:1.5,borderRadius:4}] },
+    options: { ...baseChartOpts, scales:{...baseChartOpts.scales,y:{...baseChartOpts.scales.y,ticks:{...baseChartOpts.scales.y.ticks,callback:v=>v.toFixed(0)+'%'}}} }
+  });
+
+  // Ledger
+  const ledger = document.getElementById('revLedger');
+  const rows = db.branches.flatMap(br => {
+    const yearNums = year!=='all'?[parseInt(year)]:[...(new Set(db.entries.map(e=>e.year)))].sort();
+    return yearNums.flatMap(y => MONTHS.map((m,i) => {
+      const s = sumEntries(filterEntries({year:String(y),month:String(i+1),branchId:br.id}));
+      if (s.revenue===0) return null;
+      const prevS = sumEntries(filterEntries({year:String(y),month:String(i),branchId:br.id}));
+      const growth = prevS.revenue>0 ? ((s.revenue-prevS.revenue)/prevS.revenue*100) : null;
+      return { branch:br.name, month:MONTHS_FULL[i], year:y, revenue:s.revenue, grossProfit:s.grossProfit, margin:s.revenue>0?(s.grossProfit/s.revenue*100):0, growth };
+    }).filter(Boolean));
+  });
+  ledger.innerHTML = `<thead><tr><th>Branch</th><th>Month</th><th>Year</th><th>Revenue</th><th>Gross Profit</th><th>GM %</th><th>MoM</th></tr></thead><tbody>` +
+    (rows.length ? rows.map(r=>`<tr>
+      <td>${r.branch}</td><td>${r.month}</td><td class="mono">${r.year}</td>
+      <td class="mono">${fmtFull(r.revenue)}</td><td class="mono">${fmtFull(r.grossProfit)}</td>
+      <td class="mono ${r.margin>=40?'positive':r.margin<20?'negative':''}">${r.margin.toFixed(1)}%</td>
+      <td class="mono ${r.growth===null?'':r.growth>=0?'positive':'negative'}">${r.growth!==null?(r.growth>=0?'+':'')+r.growth.toFixed(1)+'%':'—'}</td>
+    </tr>`).join('') : '<tr><td colspan="7" class="text-mute" style="text-align:center;padding:24px">No data for selected period.</td></tr>') + '</tbody>';
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER PROFIT
+// ══════════════════════════════════════════════════════════
+
+function renderProfit() {
+  const year = document.getElementById('profYear')?.value || 'all';
+  const month = document.getElementById('profMonth')?.value || 'all';
+  const entries = filterEntries({ year, month });
+  const sum = sumEntries(entries);
+  const trendYear = year!=='all'?year:String([...new Set(db.entries.map(e=>e.year))].sort().pop()||2024);
+
+  // KPIs
+  const kpiEl = document.getElementById('profKPIs');
+  const grossMargin = sum.revenue>0?(sum.grossProfit/sum.revenue*100):0;
+  const netMargin = sum.revenue>0?(sum.netProfit/sum.revenue*100):0;
+  kpiEl.innerHTML = [
+    { label:'Gross Profit', val:fmt(sum.grossProfit), sub:`${grossMargin.toFixed(1)}% margin` },
+    { label:'Net Profit', val:fmt(sum.netProfit), sub:`${netMargin.toFixed(1)}% margin` },
+    { label:'Total Expenses', val:fmt(sum.gross), sub:'COGS + OpEx' },
+    { label:'Tax Estimate', val:fmt(sum.tax), sub:db.settings.taxRegime.toUpperCase()+' regime' }
+  ].map(k=>`<div class="card"><div class="card-title">${k.label}</div><div class="kpi-value mt-8">${k.val}</div><div class="kpi-label">${k.sub}</div></div>`).join('');
+
+  // Gross vs Net trend
+  const grossDS = MONTHS.map((_,i)=>sumEntries(filterEntries({year:trendYear,month:String(i+1)})).grossProfit);
+  const netDS = MONTHS.map((_,i)=>sumEntries(filterEntries({year:trendYear,month:String(i+1)})).netProfit);
+  makeChart('profTrendChart', {
+    type:'line', data:{labels:MONTHS,datasets:[
+      {label:'Gross Profit',data:grossDS,borderColor:'#2A7D4F',backgroundColor:'#2A7D4F22',borderWidth:2,tension:0.4,fill:true,pointRadius:3},
+      {label:'Net Profit',data:netDS,borderColor:'#3D5A73',backgroundColor:'#3D5A7322',borderWidth:2,tension:0.4,fill:true,pointRadius:3}
+    ]}, options:baseChartOpts
+  });
+
+  // Waterfall (stacked bar: revenue, then each expense as negative)
+  makeChart('profWaterfallChart', {
+    type:'bar', data:{labels:['Revenue','COGS','Gross Profit','Rent','Utilities','Other','Net Profit'],
+      datasets:[{label:'Amount',data:[sum.revenue,-sum.cogs,sum.grossProfit,-sum.rent,-sum.utilities,-sum.otherExpenses,sum.netProfit],
+        backgroundColor:[sum.revenue>=0?'#3D5A73':'#D63B3B','#D63B3B99',sum.grossProfit>=0?'#2A7D4F':'#D63B3B','#D63B3B99','#D63B3B99','#D63B3B99',sum.netProfit>=0?'#2A7D4F':'#D63B3B'],
+        borderWidth:0,borderRadius:4}]},
+    options:{...baseChartOpts,plugins:{legend:{display:false}}}
+  });
+
+  // Margin by branch
+  const branchMargins = db.branches.map(br=>{const s=sumEntries(filterEntries({year,month,branchId:br.id}));return{name:br.name,gm:s.revenue>0?s.grossProfit/s.revenue*100:0,nm:s.revenue>0?s.netProfit/s.revenue*100:0,color:br.color};});
+  makeChart('profMarginBar', {
+    type:'bar', data:{labels:branchMargins.map(b=>b.name),datasets:[
+      {label:'Gross Margin %',data:branchMargins.map(b=>b.gm),backgroundColor:branchMargins.map(b=>b.color+'99'),borderColor:branchMargins.map(b=>b.color),borderWidth:1.5,borderRadius:4},
+      {label:'Net Margin %',data:branchMargins.map(b=>b.nm),backgroundColor:branchMargins.map(b=>b.color+'44'),borderColor:branchMargins.map(b=>b.color),borderWidth:1.5,borderRadius:4}
+    ]}, options:{...baseChartOpts,scales:{...baseChartOpts.scales,y:{...baseChartOpts.scales.y,ticks:{...baseChartOpts.scales.y.ticks,callback:v=>v.toFixed(0)+'%'}}}}
+  });
+
+  // Expense ratio donut
+  makeChart('profExpRatioChart', {
+    type:'doughnut', data:{labels:['COGS','Rent','Utilities','Other','Net Profit'],
+      datasets:[{data:[sum.cogs,sum.rent,sum.utilities,sum.otherExpenses,Math.max(0,sum.netProfit)],backgroundColor:['#D63B3B','#B8760A','#686E73','#9A9DA2','#2A7D4F'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:10},boxWidth:8}}},cutout:'55%'}
+  });
+
+  // P&L
+  const plEl = document.getElementById('profPLSummary');
+  if (plEl) plEl.innerHTML = [
+    ['Revenue',sum.revenue,true],['COGS',sum.cogs,false],['','','divider'],['Gross Profit',sum.grossProfit,sum.grossProfit>=0],['Rent',sum.rent,false],['Utilities',sum.utilities,false],['Other',sum.otherExpenses,false],['','','divider'],['Net Profit',sum.netProfit,sum.netProfit>=0],['Tax Est.',sum.tax,null],['Net After Tax',sum.netAfterTax,sum.netAfterTax>=0]
+  ].map(([label,val,pos])=> val==='divider'?'<div class="divider"></div>':`
+    <div class="flex justify-between items-center" style="padding:4px 0;border-bottom:1px solid var(--border)">
+      <span class="text-sm ${label.includes('Profit')&&pos?'font-bold':''}">${label}</span>
+      <span class="font-mono text-sm ${pos===true?'positive':pos===false&&label!=='Revenue'?'negative':''}">${fmtFull(val)}</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER CASH FLOW
+// ══════════════════════════════════════════════════════════
+
+function renderCashFlow() {
+  const allEntries = filterEntries({});
+  const years = [...new Set(db.entries.map(e=>e.year))].sort();
+  const trendYear = String(years[years.length-1]||2024);
+
+  const monthly = MONTHS.map((_,i)=>{
+    const s=sumEntries(filterEntries({year:trendYear,month:String(i+1)}));
+    return {inflow:s.revenue,outflow:s.gross,net:s.netProfit};
+  });
+
+  const sum = sumEntries(allEntries);
+
+  // KPIs
+  document.getElementById('cashKPIs').innerHTML=[
+    {label:'Total Inflow',val:fmt(sum.revenue),sub:'All revenue'},
+    {label:'Total Outflow',val:fmt(sum.gross),sub:'All expenses'},
+    {label:'Net Cash',val:fmt(sum.netProfit),sub:'Net position'},
+    {label:'Cash Burn',val:fmt(sum.gross/Math.max(1,db.entries.length)),sub:'Avg per entry'}
+  ].map(k=>`<div class="card"><div class="card-title">${k.label}</div><div class="kpi-value mt-8">${k.val}</div><div class="kpi-label">${k.sub}</div></div>`).join('');
+
+  // Waterfall
+  makeChart('cashWaterfallChart',{type:'bar',data:{labels:MONTHS,datasets:[
+    {label:'Inflow',data:monthly.map(m=>m.inflow),backgroundColor:'#2A7D4F99',borderColor:'#2A7D4F',borderWidth:1.5,borderRadius:4},
+    {label:'Outflow',data:monthly.map(m=>-m.outflow),backgroundColor:'#D63B3B99',borderColor:'#D63B3B',borderWidth:1.5,borderRadius:4},
+    {label:'Net',data:monthly.map(m=>m.net),type:'line',borderColor:'#3D5A73',borderWidth:2,tension:0.4,pointRadius:3,yAxisID:'y'}
+  ]},options:{...baseChartOpts,scales:{...baseChartOpts.scales,x:baseChartOpts.scales.x}}});
+
+  // Cumulative
+  let cum=0;
+  const cumData=monthly.map(m=>{cum+=m.net;return cum;});
+  makeChart('cashPositionChart',{type:'line',data:{labels:MONTHS,datasets:[{label:'Cumulative Cash',data:cumData,borderColor:'#3D5A73',backgroundColor:'rgba(61,90,115,0.1)',borderWidth:2,fill:true,tension:0.4,pointRadius:3}]},options:baseChartOpts});
+
+  // Inflow vs Outflow bar
+  makeChart('cashFlowBar',{type:'bar',data:{labels:MONTHS,datasets:[
+    {label:'Inflow',data:monthly.map(m=>m.inflow),backgroundColor:'#2A7D4F88',borderRadius:4},
+    {label:'Outflow',data:monthly.map(m=>m.outflow),backgroundColor:'#D63B3B88',borderRadius:4}
+  ]},options:{...baseChartOpts,plugins:{legend:{labels:{font:{family:'Inter',size:11},boxWidth:10}}}}});
+
+  // Expense categories donut
+  makeChart('cashExpCatChart',{type:'doughnut',data:{labels:['COGS','Rent','Utilities','Other'],datasets:[{data:[sum.cogs,sum.rent,sum.utilities,sum.otherExpenses],backgroundColor:['#3D5A73','#2A7D4F','#B8760A','#686E73'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},boxWidth:8}}},cutout:'60%'}});
+
+  // Burn rate trend
+  makeChart('cashBurnChart',{type:'line',data:{labels:MONTHS,datasets:[{label:'Expense Burn',data:monthly.map(m=>m.outflow),borderColor:'#D63B3B',backgroundColor:'#D63B3B22',borderWidth:2,fill:true,tension:0.4,pointRadius:3}]},options:baseChartOpts});
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER FORECAST
+// ══════════════════════════════════════════════════════════
+
+function renderForecast() {
+  const years=[...new Set(db.entries.map(e=>e.year))].sort();
+  const lastYear=years[years.length-1]||2024;
+  const growthRate=(db.settings.forecastGrowth||5)/100;
+
+  const actual=MONTHS.map((_,i)=>sumEntries(filterEntries({year:String(lastYear),month:String(i+1)})).revenue);
+  const lastActualIdx=actual.findLastIndex(v=>v>0);
+  const avgActual=actual.filter(v=>v>0).reduce((a,b)=>a+b,0)/Math.max(1,actual.filter(v=>v>0).length);
+
+  const forecast=MONTHS.map((_,i)=>{
+    if(i<=lastActualIdx) return null;
+    return avgActual*(1+growthRate)**(i-lastActualIdx);
+  });
+
+  const forecastProfit=MONTHS.map((_,i)=>{
+    if(i<=lastActualIdx) return sumEntries(filterEntries({year:String(lastYear),month:String(i+1)})).netProfit||null;
+    const fRev=forecast[i];
+    if(!fRev) return null;
+    const s=sumEntries(filterEntries({year:String(lastYear)}));
+    const nm=s.revenue>0?s.netProfit/s.revenue:0.12;
+    return fRev*nm;
+  });
+
+  makeChart('forecastRevChart',{type:'line',data:{labels:MONTHS,datasets:[
+    {label:'Actual',data:actual.map((v,i)=>i<=lastActualIdx?v:null),borderColor:'#3D5A73',backgroundColor:'#3D5A7322',borderWidth:2,fill:true,tension:0.4,pointRadius:3},
+    {label:'Forecast',data:forecast,borderColor:'#F5A623',borderDash:[6,4],borderWidth:2,fill:false,tension:0.4,pointRadius:3,spanGaps:false}
+  ]},options:baseChartOpts});
+
+  makeChart('forecastProfChart',{type:'line',data:{labels:MONTHS,datasets:[
+    {label:'Actual Net Profit',data:forecastProfit.map((v,i)=>i<=lastActualIdx?v:null),borderColor:'#2A7D4F',backgroundColor:'#2A7D4F22',borderWidth:2,fill:true,tension:0.4,pointRadius:3},
+    {label:'Forecast Profit',data:forecastProfit.map((v,i)=>i>lastActualIdx?v:null),borderColor:'#F5A623',borderDash:[6,4],borderWidth:2,fill:false,tension:0.4,pointRadius:3,spanGaps:false}
+  ]},options:baseChartOpts});
+
+  let cum=0;
+  const cumForecast=MONTHS.map((_,i)=>{
+    const s=sumEntries(filterEntries({year:String(lastYear),month:String(i+1)}));
+    const net=i<=lastActualIdx?s.netProfit:(forecast[i]||0)*(db.settings.forecastGrowth/100);
+    cum+=net; return cum;
+  });
+  makeChart('forecastCashChart',{type:'line',data:{labels:MONTHS,datasets:[{label:'Cash Projection',data:cumForecast,borderColor:'#3D5A73',backgroundColor:'#3D5A7322',borderWidth:2,fill:true,tension:0.4,pointRadius:3}]},options:baseChartOpts});
+
+  const assumEl=document.getElementById('forecastAssumptions');
+  if(assumEl) assumEl.innerHTML=`
+    <div class="form-group"><div class="form-label">Growth Rate %</div>
+    <input type="number" class="form-input" value="${db.settings.forecastGrowth}" onchange="db.settings.forecastGrowth=parseFloat(this.value)||5;save();renderForecast()"></div>
+    <div class="intel-block" style="margin-top:8px">
+      <div class="intel-label">ASSUMPTION</div>
+      <div class="intel-text">Based on the last ${actual.filter(v=>v>0).length} months of data. Forecast applies a <strong>${db.settings.forecastGrowth}%</strong> monthly growth rate beyond the last recorded entry.</div>
+    </div>`;
+
+  const kpiEl=document.getElementById('forecastKPIs');
+  const totalForecast=forecast.filter(Boolean).reduce((a,b)=>a+b,0);
+  const totalActual=actual.reduce((a,b)=>a+b,0);
+  kpiEl.innerHTML=[
+    {label:'Actual YTD',val:fmt(totalActual),sub:`${actual.filter(v=>v>0).length} months recorded`},
+    {label:'Forecasted',val:fmt(totalForecast),sub:`${forecast.filter(Boolean).length} months ahead`},
+    {label:'Full Year Est.',val:fmt(totalActual+totalForecast),sub:'Actual + Forecast'},
+    {label:'Growth Rate',val:db.settings.forecastGrowth+'%',sub:'Applied to forecast'}
+  ].map(k=>`<div class="card"><div class="card-title">${k.label}</div><div class="kpi-value mt-8">${k.val}</div><div class="kpi-label">${k.sub}</div></div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER BRANCHES
+// ══════════════════════════════════════════════════════════
+
+function renderBranches() {
+  const cardsEl=document.getElementById('branchCards');
+  cardsEl.innerHTML=db.branches.map(br=>{
+    const s=sumEntries(filterEntries({branchId:br.id}));
+    const nm=s.revenue>0?(s.netProfit/s.revenue*100):0;
+    const gm=s.revenue>0?(s.grossProfit/s.revenue*100):0;
+    const rr=s.revenue>0?(s.rent/s.revenue*100):0;
+    const health=nm>15?'STRONG':nm>8?'STABLE':nm>0?'THIN':'AT RISK';
+    const healthClass=nm>15?'badge-green':nm>8?'badge-blue':nm>0?'badge-orange':'badge-red';
+    return `<div class="card">
+      <div class="flex items-center justify-between mb-12">
+        <div class="branch-tag" style="color:${br.color};border-color:${br.color}">
+          <div class="branch-dot" style="background:${br.color}"></div>${br.name}
+        </div>
+        <span class="badge ${healthClass}">${health}</span>
+      </div>
+      <div class="section-sub mb-8">📍 ${br.location}</div>
+      <div class="divider"></div>
+      <div class="flex justify-between mt-8"><span class="text-sm text-mute">Revenue</span><span class="font-mono text-sm">${fmt(s.revenue)}</span></div>
+      <div class="flex justify-between mt-4"><span class="text-sm text-mute">Net Profit</span><span class="font-mono text-sm ${nm>=0?'positive':'negative'}">${fmt(s.netProfit)}</span></div>
+      <div class="flex justify-between mt-4"><span class="text-sm text-mute">Gross Margin</span><span class="font-mono text-sm">${gm.toFixed(1)}%</span></div>
+      <div class="flex justify-between mt-4"><span class="text-sm text-mute">Net Margin</span><span class="font-mono text-sm ${nm>=0?'positive':'negative'}">${nm.toFixed(1)}%</span></div>
+      <div class="flex justify-between mt-4"><span class="text-sm text-mute">Rent Ratio</span><span class="font-mono text-sm ${rr<=8?'positive':rr<=14?'':' negative'}">${rr.toFixed(1)}%</span></div>
+      <div class="divider"></div>
+      <button class="btn btn-ghost" style="width:100%;font-size:11px" onclick="if(confirm('Remove ${br.name}?')){removeBranch('${br.id}')}">Remove Branch</button>
+    </div>`;
+  }).join('');
+
+  // Branch comparison
+  const labels=db.branches.map(b=>b.name);
+  const revData=db.branches.map(br=>sumEntries(filterEntries({branchId:br.id})).revenue);
+  makeChart('branchCompRevChart',{type:'bar',data:{labels,datasets:[{label:'Revenue',data:revData,backgroundColor:db.branches.map(b=>b.color+'CC'),borderColor:db.branches.map(b=>b.color),borderWidth:1.5,borderRadius:4}]},options:{...baseChartOpts,plugins:{legend:{display:false}}}});
+
+  const marginData=db.branches.map(br=>{const s=sumEntries(filterEntries({branchId:br.id}));return s.revenue>0?s.netProfit/s.revenue*100:0;});
+  makeChart('branchCompMarginChart',{type:'bar',data:{labels,datasets:[{label:'Net Margin %',data:marginData,backgroundColor:marginData.map(v=>v>0?'#2A7D4F88':'#D63B3B88'),borderColor:marginData.map(v=>v>0?'#2A7D4F':'#D63B3B'),borderWidth:1.5,borderRadius:4}]},options:{...baseChartOpts,plugins:{legend:{display:false}},scales:{...baseChartOpts.scales,y:{...baseChartOpts.scales.y,ticks:{...baseChartOpts.scales.y.ticks,callback:v=>v.toFixed(0)+'%'}}}}});
+
+  // Matrix
+  const matrix=document.getElementById('branchMatrix');
+  matrix.innerHTML=`<thead><tr><th>Branch</th><th>Revenue</th><th>COGS</th><th>Rent</th><th>Utilities</th><th>Other</th><th>Gross Profit</th><th>Net Profit</th><th>GM%</th><th>NM%</th></tr></thead><tbody>`+
+    db.branches.map(br=>{const s=sumEntries(filterEntries({branchId:br.id}));const gm=s.revenue>0?s.grossProfit/s.revenue*100:0;const nm=s.revenue>0?s.netProfit/s.revenue*100:0;return`<tr>
+      <td><div class="branch-tag" style="color:${br.color};border-color:${br.color}"><div class="branch-dot" style="background:${br.color}"></div>${br.name}</div></td>
+      <td class="mono">${fmtFull(s.revenue)}</td><td class="mono">${fmtFull(s.cogs)}</td><td class="mono">${fmtFull(s.rent)}</td><td class="mono">${fmtFull(s.utilities)}</td><td class="mono">${fmtFull(s.otherExpenses)}</td>
+      <td class="mono positive">${fmtFull(s.grossProfit)}</td>
+      <td class="mono ${nm>=0?'positive':'negative'}">${fmtFull(s.netProfit)}</td>
+      <td class="mono">${gm.toFixed(1)}%</td>
+      <td class="mono ${nm>=0?'positive':'negative'}">${nm.toFixed(1)}%</td>
+    </tr>`;}).join('')+'</tbody>';
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER HEALTH
+// ══════════════════════════════════════════════════════════
+
+function renderHealth() {
+  const allEntries=filterEntries({});
+  const sum=sumEntries(allEntries);
+  const gm=sum.revenue>0?sum.grossProfit/sum.revenue*100:0;
+  const nm=sum.revenue>0?sum.netProfit/sum.revenue*100:0;
+  const rentRatio=sum.revenue>0?sum.rent/sum.revenue*100:0;
+  const cogsRatio=sum.revenue>0?sum.cogs/sum.revenue*100:0;
+
+  // Score calc
+  let score=0;
+  if(gm>50)score+=25; else if(gm>35)score+=18; else if(gm>20)score+=10; else score+=3;
+  if(nm>15)score+=25; else if(nm>8)score+=18; else if(nm>3)score+=10; else if(nm>0)score+=5;
+  if(rentRatio<8)score+=20; else if(rentRatio<12)score+=14; else if(rentRatio<18)score+=8; else score+=2;
+  if(db.branches.length>=3)score+=10; else if(db.branches.length>=2)score+=7; else score+=3;
+  if(allEntries.length>=6)score+=10; else if(allEntries.length>=3)score+=6; else score+=2;
+  if(cogsRatio<35)score+=10; else if(cogsRatio<45)score+=7; else if(cogsRatio<55)score+=4;
+  score=Math.min(100,Math.round(score));
+
+  const grade=score>=80?'A':score>=65?'B':score>=50?'C':score>=35?'D':'F';
+  const gradeClass=score>=80?'badge-green':score>=65?'badge-blue':score>=50?'badge-orange':'badge-red';
+  const gradeLabel=score>=80?'Excellent':score>=65?'Good':score>=50?'Fair':score>=35?'Needs Work':'Critical';
+
+  document.getElementById('healthScoreNum').textContent=score;
+  document.getElementById('healthScoreTitle').textContent='Business Health — '+gradeLabel;
+  document.getElementById('healthScoreSub').textContent=`Based on ${allEntries.length} entries across ${db.branches.length} branches.`;
+  document.getElementById('healthGrade').innerHTML=`<span class="badge ${gradeClass}" style="font-size:13px;padding:4px 12px">Grade ${grade}</span>`;
+
+  const topPill=document.getElementById('topHealthPill');
+  topPill.className='health-pill '+(score>=65?'good':score>=40?'warn':'danger');
+  document.getElementById('topHealthLabel').textContent=score>=80?'HEALTHY':score>=65?'STABLE':score>=40?'CAUTION':'CRITICAL';
+
+  // Health ring
+  destroyChart('healthRingChart');
+  const ctx=document.getElementById('healthRingChart').getContext('2d');
+  const ringColor=score>=80?'#2A7D4F':score>=65?'#3D5A73':score>=40?'#F5A623':'#D63B3B';
+  chartInstances['healthRingChart']=new Chart(ctx,{type:'doughnut',data:{datasets:[{data:[score,100-score],backgroundColor:[ringColor,'#ECEDEE'],borderWidth:0}]},options:{responsive:false,cutout:'78%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+
+  // Metrics
+  const metrics=[
+    {label:'Gross Margin',val:gm,target:50,unit:'%',desc:'Target: >50%'},
+    {label:'Net Margin',val:nm,target:15,unit:'%',desc:'Target: >15%'},
+    {label:'Rent Ratio',val:rentRatio,target:10,unit:'%',desc:'Target: <10%',invert:true},
+    {label:'COGS Ratio',val:cogsRatio,target:40,unit:'%',desc:'Target: <40%',invert:true},
+    {label:'Branch Count',val:db.branches.length,target:3,unit:'',desc:'Target: 3+'},
+    {label:'Data Points',val:allEntries.length,target:12,unit:'',desc:'Target: 12+'}
+  ];
+  document.getElementById('healthMetrics').innerHTML=metrics.map(m=>{
+    const pct=m.invert?Math.max(0,Math.min(100,(m.target/Math.max(0.1,m.val))*100)):Math.min(100,(m.val/m.target)*100);
+    const good=m.invert?m.val<=m.target:m.val>=m.target;
+    return`<div class="card">
+      <div class="card-title">${m.label}</div>
+      <div class="kpi-value mt-8">${typeof m.val==='number'?m.val.toFixed(m.unit==='%'?1:0):'—'}${m.unit}</div>
+      <div class="kpi-label">${m.desc}</div>
+      <div class="progress-bar mt-8"><div class="progress-fill ${good?'green':'orange'}" style="width:${pct}%"></div></div>
+    </div>`;}).join('');
+
+  // Radar
+  makeChart('healthRadarChart',{type:'radar',data:{labels:['Gross Margin','Net Margin','Rent Control','COGS Control','Branch Scale','Data Coverage'],datasets:[{label:'Your Score',data:[Math.min(100,gm*2),Math.min(100,nm*6.67),Math.max(0,100-rentRatio*6.67),Math.max(0,100-cogsRatio*2),Math.min(100,db.branches.length/3*100),Math.min(100,allEntries.length/12*100)],backgroundColor:'rgba(61,90,115,0.15)',borderColor:'#3D5A73',borderWidth:2,pointBackgroundColor:'#3D5A73',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{grid:{color:'#ECEDEE'},ticks:{display:false},pointLabels:{font:{family:'Inter',size:11}},suggestedMin:0,suggestedMax:100}},plugins:{legend:{display:false}}}});
+
+  // KPI Scorecard
+  document.getElementById('healthKPIScorecard').innerHTML=[
+    {label:'Gross Margin',val:gm.toFixed(1)+'%',ok:gm>=40},
+    {label:'Net Margin',val:nm.toFixed(1)+'%',ok:nm>=8},
+    {label:'Rent / Revenue',val:rentRatio.toFixed(1)+'%',ok:rentRatio<=12},
+    {label:'COGS / Revenue',val:cogsRatio.toFixed(1)+'%',ok:cogsRatio<=45},
+    {label:'Tax Compliance',val:db.settings.taxRegime.toUpperCase(),ok:db.settings.taxRegime!=='none'},
+    {label:'Branches Active',val:db.branches.length,ok:db.branches.length>=2},
+    {label:'Net Profit',val:fmt(sum.netProfit),ok:sum.netProfit>0},
+    {label:'Revenue Recorded',val:fmt(sum.revenue),ok:sum.revenue>0}
+  ].map(k=>`<div class="flex justify-between items-center" style="padding:8px 0;border-bottom:1px solid var(--border)">
+    <span class="text-sm">${k.label}</span>
+    <div class="flex items-center gap-8">
+      <span class="font-mono text-sm">${k.val}</span>
+      <span style="font-size:14px">${k.ok?'✅':'⚠️'}</span>
+    </div>
+  </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER ANALYSIS
+// ══════════════════════════════════════════════════════════
+
+function renderAnalysis() {
+  const allEntries=filterEntries({});
+  const sum=sumEntries(allEntries);
+
+  // Scatter
+  const scatterData=db.branches.map(br=>({
+    x:sumEntries(filterEntries({branchId:br.id})).revenue,
+    y:sumEntries(filterEntries({branchId:br.id})).gross
+  }));
+  makeChart('anaScatterChart',{type:'scatter',data:{datasets:db.branches.map((br,i)=>({label:br.name,data:[scatterData[i]],backgroundColor:br.color+'CC',borderColor:br.color,pointRadius:10,pointHoverRadius:12}))},options:{...baseChartOpts,plugins:{legend:{labels:{font:{family:'Inter',size:11},boxWidth:10}}}}});
+
+  // Break-even
+  const fixedCosts=sum.rent+sum.utilities;
+  const vcRatio=sum.revenue>0?sum.cogs/sum.revenue:0.4;
+  const contributionMargin=1-vcRatio;
+  const breakEven=contributionMargin>0?fixedCosts/contributionMargin:0;
+  const beData=Array.from({length:10},(_,i)=>{
+    const rev=breakEven*0.5+i*(breakEven*1.5/9);
+    return{x:rev,rev,totalCost:fixedCosts+rev*vcRatio};
+  });
+  makeChart('anaBreakEvenChart',{type:'line',data:{labels:beData.map(d=>fmt(d.x)),datasets:[
+    {label:'Revenue',data:beData.map(d=>d.rev),borderColor:'#2A7D4F',borderWidth:2,tension:0.1,pointRadius:0},
+    {label:'Total Cost',data:beData.map(d=>d.totalCost),borderColor:'#D63B3B',borderWidth:2,tension:0.1,pointRadius:0}
+  ]},options:{...baseChartOpts,plugins:{legend:{labels:{font:{family:'Inter',size:11},boxWidth:10}}}}});
+
+  // YoY
+  const years=[...new Set(db.entries.map(e=>e.year))].sort();
+  const yoyData=years.map(y=>({year:y,rev:sumEntries(filterEntries({year:String(y)})).revenue,profit:sumEntries(filterEntries({year:String(y)})).netProfit}));
+  makeChart('anaYoYChart',{type:'bar',data:{labels:yoyData.map(d=>String(d.year)),datasets:[
+    {label:'Revenue',data:yoyData.map(d=>d.rev),backgroundColor:'#3D5A7388',borderRadius:4},
+    {label:'Net Profit',data:yoyData.map(d=>d.profit),backgroundColor:'#2A7D4F88',borderRadius:4}
+  ]},options:{...baseChartOpts,plugins:{legend:{labels:{font:{family:'Inter',size:11},boxWidth:10}}}}});
+
+  // Tax
+  const taxEl=document.getElementById('anaTaxSection');
+  const taxRegime=db.settings.taxRegime;
+  let taxNote='',taxEst=0;
+  if(taxRegime==='vat'){taxEst=sum.revenue*0.12/1.12;taxNote='Output VAT (12%) on gross sales.';}
+  else if(taxRegime==='percentage'){taxEst=sum.revenue*0.03;taxNote='Percentage Tax (3%) on gross receipts.';}
+  else if(taxRegime==='income'){taxEst=Math.max(0,sum.netProfit)*db.settings.citRate/100;taxNote=`Income Tax at ${db.settings.citRate}% on net profit.`;}
+  else if(taxRegime==='create'){taxEst=Math.max(0,sum.netProfit)*0.20;taxNote='CREATE Act: 20% on net profit.';}
+  else{taxNote='No tax regime selected. Go to Settings to configure.';}
+  taxEl.innerHTML=`
+    <div class="intel-block warning">
+      <div class="intel-label">TAX ESTIMATE — ${taxRegime.toUpperCase()}</div>
+      <div class="intel-text">${taxNote}<br>Estimated liability: <strong>${fmtFull(taxEst)}</strong></div>
+    </div>
+    <div class="flex justify-between mt-8"><span class="text-sm text-mute">Tax Base</span><span class="font-mono text-sm">${fmtFull(taxRegime==='vat'||taxRegime==='percentage'?sum.revenue:sum.netProfit)}</span></div>
+    <div class="flex justify-between mt-4"><span class="text-sm text-mute">Effective Rate</span><span class="font-mono text-sm">${taxRegime==='vat'?'12%':taxRegime==='percentage'?'3%':taxRegime==='income'?db.settings.citRate+'%':taxRegime==='create'?'20%':'0%'}</span></div>
+    <div class="flex justify-between mt-4 font-bold"><span class="text-sm">Tax Estimate</span><span class="font-mono text-sm negative">${fmtFull(taxEst)}</span></div>`;
+
+  // Top/Bottom
+  const branchPerf=db.branches.map(br=>{const s=sumEntries(filterEntries({branchId:br.id}));return{br,s,nm:s.revenue>0?s.netProfit/s.revenue*100:0};}).sort((a,b)=>b.nm-a.nm);
+  const topBotEl=document.getElementById('anaTopBottom');
+  topBotEl.innerHTML=branchPerf.map((b,i)=>`
+    <div class="flex justify-between items-center" style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-8">
+        <span style="font-size:14px">${i===0?'🏆':i===branchPerf.length-1?'⚠️':'▸'}</span>
+        <div>
+          <div class="text-sm font-bold">${b.br.name}</div>
+          <div class="text-xs text-mute">${b.br.location}</div>
+        </div>
+      </div>
+      <div class="text-right">
+        <div class="font-mono text-sm ${b.nm>=0?'positive':'negative'}">${b.nm.toFixed(1)}%</div>
+        <div class="text-xs text-mute">net margin</div>
+      </div>
+    </div>`).join('');
+
+  // Full Ledger
+  const allE=db.entries.map(computeEntry).sort((a,b)=>a.year-b.year||a.month-b.month);
+  document.getElementById('anaFullLedger').innerHTML=`<thead><tr><th>Branch</th><th>Period</th><th>Revenue</th><th>COGS</th><th>Rent</th><th>Util.</th><th>Other</th><th>Gross Profit</th><th>Net Profit</th><th>NM%</th><th>Notes</th></tr></thead><tbody>`+
+    (allE.length?allE.map(e=>`<tr>
+      <td>${branchName(e.branchId)}</td>
+      <td class="mono">${MONTHS[e.month-1]} ${e.year}</td>
+      <td class="mono">${fmtFull(e.revenue)}</td><td class="mono">${fmtFull(e.cogs)}</td><td class="mono">${fmtFull(e.rent)}</td><td class="mono">${fmtFull(e.utilities)}</td><td class="mono">${fmtFull(e.otherExpenses)}</td>
+      <td class="mono positive">${fmtFull(e.grossProfit)}</td>
+      <td class="mono ${e.netProfit>=0?'positive':'negative'}">${fmtFull(e.netProfit)}</td>
+      <td class="mono ${e.netMargin>=0?'positive':'negative'}">${e.netMargin.toFixed(1)}%</td>
+      <td class="text-sm text-mute">${e.notes||'—'}</td>
+    </tr>`).join(''):`<tr><td colspan="11" class="text-mute" style="text-align:center;padding:24px">No entries.</td></tr>`)+'</tbody>';
+}
+
+// ══════════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════════
+
+function loadSettings() {
+  const s=db.settings;
+  document.getElementById('settingsTaxRegime').value=s.taxRegime||'vat';
+  document.getElementById('settingsCITRate').value=s.citRate||25;
+  document.getElementById('settingsBusinessName').value=s.businessName||'My Business';
+  document.getElementById('settingsCurrency').value=s.currency||'PHP';
+  document.getElementById('settingsCOGS').value=s.defaultCOGS||40;
+  document.getElementById('settingsGrowth').value=s.forecastGrowth||5;
+  // Populate Loyverse branch selector
+  const lb=document.getElementById('loyverseBranch');
+  if(lb) lb.innerHTML=db.branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  // Set current month/year as default
+  const now=new Date();
+  const lm=document.getElementById('loyverseMonth');
+  const ly=document.getElementById('loyverseYear');
+  if(lm) lm.value=now.getMonth()+1;
+  if(ly) ly.value=now.getFullYear();
+}
+
+// ══════════════════════════════════════════════════════════
+// LOYVERSE CSV IMPORT
+// ══════════════════════════════════════════════════════════
+
+// ── File upload handler
+function handleLoyverseFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  readLoyverseFile(file);
+  event.target.value = ''; // reset so same file can be re-imported
+}
+
+function handleLoyverseDrop(event) {
+  const file = event.dataTransfer.files[0];
+  if (!file) return;
+  readLoyverseFile(file);
+}
+
+function readLoyverseFile(file) {
+  if (!file.name.match(/\.(csv|txt)$/i)) {
+    document.getElementById('loyverseResult').innerHTML = '<div class="intel-block risk"><div class="intel-text">Please select a .csv file exported from Loyverse.</div></div>';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const csv = e.target.result;
+    // Show a preview in the hidden textarea for transparency
+    const ta = document.getElementById('loyverseCSV');
+    if (ta) ta.value = csv;
+    // Run import immediately
+    importLoyverseFromText(csv);
+  };
+  reader.readAsText(file);
+}
+
+function importLoyverseCSV() {
+  const csv = document.getElementById('loyverseCSV').value.trim();
+  if (!csv) {
+    document.getElementById('loyverseResult').innerHTML = '<div class="intel-block risk"><div class="intel-text">Please paste your CSV text first.</div></div>';
+    return;
+  }
+  importLoyverseFromText(csv);
+}
+
+function importLoyverseFromText(csv) {
+  const branchId = document.getElementById('loyverseBranch').value;
+  const month = parseInt(document.getElementById('loyverseMonth').value);
+  const year = parseInt(document.getElementById('loyverseYear').value);
+  const cogsOverride = parseFloat(document.getElementById('loyverseCOGS').value) / 100 || 0.40;
+  const resultEl = document.getElementById('loyverseResult');
+
+  if (!csv) { resultEl.innerHTML = '<div class="intel-block risk"><div class="intel-text">Please paste your Loyverse CSV content.</div></div>'; return; }
+  if (!branchId) { resultEl.innerHTML = '<div class="intel-block risk"><div class="intel-text">Please select a branch.</div></div>'; return; }
+
+  const lines = csv.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length < 2) { resultEl.innerHTML = '<div class="intel-block risk"><div class="intel-text">CSV appears too short — paste the full Sales Summary export from Loyverse.</div></div>'; return; }
+
+  // Parse CSV header to find column indices
+  const parseCSVLine = (line) => {
+    const result = []; let current = ''; let inQuotes = false;
+    for (let ch of line) {
+      if (ch === '"') { inQuotes = !inQuotes; }
+      else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+      else { current += ch; }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g,'').toLowerCase().trim());
+
+  // Try to find Net Sales column (Loyverse uses "Net sales" or "Gross sales")
+  const netSalesIdx = headers.findIndex(h => h.includes('net sales') || h === 'net sale');
+  const grossSalesIdx = headers.findIndex(h => h.includes('gross sales') || h === 'gross sale');
+  const costIdx = headers.findIndex(h => h.includes('cost'));
+  const grossProfitIdx = headers.findIndex(h => h.includes('gross profit'));
+
+  // Fallback: look for any numeric-looking column
+  const salesIdx = netSalesIdx >= 0 ? netSalesIdx : grossSalesIdx >= 0 ? grossSalesIdx : -1;
+
+  let totalRevenue = 0, totalCOGS = 0, rowsImported = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (!cols || cols.length < 2) continue;
+
+    // Try to detect total row — skip rows labeled "total", "summary" etc.
+    const firstCol = (cols[0]||'').replace(/"/g,'').toLowerCase().trim();
+    if (firstCol === 'total' || firstCol === 'grand total') {
+      // Use this row as the authoritative total if found
+      if (salesIdx >= 0 && cols[salesIdx]) {
+        const v = parseFloat((cols[salesIdx]||'').replace(/[,₱\s"]/g,''));
+        if (!isNaN(v) && v > 0) { totalRevenue = v; rowsImported = -1; } // mark as "used total row"
+      }
+      break;
+    }
+
+    // Parse a sales amount from any detectable column
+    const tryParse = (idx) => {
+      if (idx < 0 || !cols[idx]) return 0;
+      return parseFloat((cols[idx]||'').replace(/[,₱\s"]/g,'')) || 0;
+    };
+
+    const rev = salesIdx >= 0 ? tryParse(salesIdx) : 0;
+    const cost = costIdx >= 0 ? tryParse(costIdx) : 0;
+
+    if (rev > 0) { totalRevenue += rev; totalCOGS += cost || 0; rowsImported++; }
+  }
+
+  // If total row was found, rowsImported=-1
+  if (rowsImported === -1) rowsImported = lines.length - 1;
+
+  if (totalRevenue <= 0) {
+    // Try brute force: sum all numeric values in a column that looks like sales
+    let bestCol = -1, bestSum = 0;
+    for (let c = 1; c < (parseCSVLine(lines[1])||[]).length; c++) {
+      let colSum = 0;
+      for (let i = 1; i < Math.min(lines.length, 50); i++) {
+        const cols = parseCSVLine(lines[i]);
+        const v = parseFloat((cols[c]||'').replace(/[,₱\s"]/g,''));
+        if (!isNaN(v) && v > 0) colSum += v;
+      }
+      if (colSum > bestSum) { bestSum = colSum; bestCol = c; }
+    }
+    if (bestSum > 0) totalRevenue = bestSum;
+  }
+
+  if (totalRevenue <= 0) {
+    resultEl.innerHTML = `<div class="intel-block risk"><div class="intel-label">Import Failed</div><div class="intel-text">Could not find revenue data in the CSV. Make sure you exported <strong>Sales Summary</strong> from Loyverse Reports. Headers found: <em>${headers.slice(0,6).join(', ')}</em></div></div>`;
+    return;
+  }
+
+  const finalCOGS = totalCOGS > 0 ? totalCOGS : totalRevenue * cogsOverride;
+  const branchObj = db.branches.find(b=>b.id===branchId);
+  const rentDefault = branchObj?.id==='b1'?18000:branchObj?.id==='b2'?12000:9000;
+
+  // Upsert
+  const existingIdx = db.entries.findIndex(e=>e.branchId===branchId&&e.month===month&&e.year===year);
+  const entry = {
+    id: 'e_'+branchId+'_'+year+'_'+month,
+    branchId, month, year,
+    revenue: totalRevenue,
+    cogs: finalCOGS,
+    rent: rentDefault,
+    utilities: 0,
+    otherExpenses: 0,
+    notes: `Imported from Loyverse CSV (${rowsImported} line items)`
+  };
+  if (existingIdx >= 0) db.entries[existingIdx] = entry;
+  else db.entries.push(entry);
+  save(); populateFilters(); renderAll();
+
+  resultEl.innerHTML = `<div class="intel-block opportunity">
+    <div class="intel-label">✓ Import Successful</div>
+    <div class="intel-text">
+      <strong>${MONTHS_FULL[month-1]} ${year} — ${branchObj?.name}</strong><br>
+      Revenue imported: <strong>₱${fmtFull(totalRevenue)}</strong><br>
+      COGS: <strong>₱${fmtFull(finalCOGS)}</strong>${totalCOGS>0?' (from CSV)':` (${Math.round(cogsOverride*100)}% estimate)`}<br>
+      <span style="font-size:11px;color:var(--ink-mute)">Tip: Manually update Rent and Utilities in Data Entry for accuracy.</span>
+    </div>
+  </div>`;
+  document.getElementById('loyverseCSV').value = '';
+}
+
+function saveSettings() {
+  db.settings.taxRegime=document.getElementById('settingsTaxRegime').value;
+  db.settings.citRate=parseFloat(document.getElementById('settingsCITRate').value)||25;
+  db.settings.businessName=document.getElementById('settingsBusinessName').value||'My Business';
+  db.settings.currency=document.getElementById('settingsCurrency').value||'PHP';
+  db.settings.defaultCOGS=parseFloat(document.getElementById('settingsCOGS').value)||40;
+  db.settings.forecastGrowth=parseFloat(document.getElementById('settingsGrowth').value)||5;
+  save();
+}
+
+function exportData() {
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='altaris-data.json';a.click();
+}
+
+function importData(e) {
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{try{db=JSON.parse(ev.target.result);save();init();}catch(err){alert('Invalid JSON file');}};
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  db={branches:[],entries:[],settings:db.settings};
+  save();init();
+}
+
+// ══════════════════════════════════════════════════════════
+// MODAL & ENTRY MANAGEMENT
+// ══════════════════════════════════════════════════════════
+
+function openModal(id) {
+  document.getElementById(id).classList.remove('hidden');
+  if(id==='dataEntryModal') renderEntryList();
+  // Set default year to current
+  const yearEl=document.getElementById('entryYear');
+  if(yearEl&&!yearEl.value) yearEl.value=new Date().getFullYear();
+  const monthEl=document.getElementById('entryMonth');
+  if(monthEl) monthEl.value=new Date().getMonth()+1;
+}
+
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function saveEntry() {
+  const branchId=document.getElementById('entryBranch').value;
+  const month=parseInt(document.getElementById('entryMonth').value);
+  const year=parseInt(document.getElementById('entryYear').value);
+  const revenue=parseFloat(document.getElementById('entryRevenue').value)||0;
+  const cogs=parseFloat(document.getElementById('entryCOGS').value)||0;
+  const rent=parseFloat(document.getElementById('entryRent').value)||0;
+  const utilities=parseFloat(document.getElementById('entryUtilities').value)||0;
+  const otherExpenses=parseFloat(document.getElementById('entryOther').value)||0;
+  const notes=document.getElementById('entryNotes').value||'';
+
+  if(!branchId||!month||!year){alert('Please fill Branch, Month, and Year.');return;}
+
+  // Upsert by branchId+month+year
+  const existingIdx=db.entries.findIndex(e=>e.branchId===branchId&&e.month===month&&e.year===year);
+  const entry={id:'e_'+branchId+'_'+year+'_'+month,branchId,month,year,revenue,cogs,rent,utilities,otherExpenses,notes};
+  if(existingIdx>=0){db.entries[existingIdx]=entry;}else{db.entries.push(entry);}
+  save();
+  populateFilters();
+  renderEntryList();
+  renderAll();
+
+  // Clear
+  ['entryRevenue','entryCOGS','entryRent','entryUtilities','entryOther','entryNotes'].forEach(id=>{document.getElementById(id).value='';});
+}
+
+function deleteEntry(entryId) {
+  db.entries=db.entries.filter(e=>e.id!==entryId);
+  save();renderEntryList();renderAll();
+}
+
+function renderEntryList() {
+  const table=document.getElementById('entryListTable');
+  const sorted=[...db.entries].sort((a,b)=>b.year-a.year||b.month-a.month);
+  table.innerHTML=`<thead><tr><th>Branch</th><th>Period</th><th>Revenue</th><th>Net</th><th></th></tr></thead><tbody>`+
+    (sorted.length?sorted.map(e=>{const c=computeEntry(e);return`<tr>
+      <td class="text-sm">${branchName(e.branchId)}</td>
+      <td class="mono" style="font-size:11px">${MONTHS[e.month-1]} ${e.year}</td>
+      <td class="mono" style="font-size:11px">${fmt(e.revenue)}</td>
+      <td class="mono ${c.netProfit>=0?'positive':'negative'}" style="font-size:11px">${fmt(c.netProfit)}</td>
+      <td><button onclick="deleteEntry('${e.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button></td>
+    </tr>`;}).join(''):`<tr><td colspan="5" class="text-mute" style="text-align:center;padding:16px">No entries yet.</td></tr>`)+'</tbody>';
+}
+
+function addBranch() {
+  const name=document.getElementById('newBranchName').value.trim();
+  if(!name){alert('Branch name required.');return;}
+  const id='b'+Date.now();
+  db.branches.push({
+    id,name,
+    location:document.getElementById('newBranchLocation').value||'—',
+    color:document.getElementById('newBranchColor').value,
+    opening:document.getElementById('newBranchOpening').value||''
+  });
+  save();
+  populateFilters();
+  renderAll();
+  closeModal('addBranchModal');
+  document.getElementById('newBranchName').value='';
+  document.getElementById('newBranchLocation').value='';
+}
+
+function removeBranch(id) {
+  db.branches=db.branches.filter(b=>b.id!==id);
+  db.entries=db.entries.filter(e=>e.branchId!==id);
+  save();populateFilters();renderAll();
+}
+
+// ══════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════════
+
+function switchTab(tab) {
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab)?.classList.add('active');
+  renderTab(tab);
+}
+
+function renderTab(tab) {
+  switch(tab) {
+    case 'overview': renderOverview(); break;
+    case 'revenue': renderRevenue(); break;
+    case 'profit': renderProfit(); break;
+    case 'cashflow': renderCashFlow(); break;
+    case 'intelligence': renderIntelligencePage(); break;
+    case 'forecast': renderForecast(); break;
+    case 'branches': renderBranches(); break;
+    case 'health': renderHealth(); break;
+    case 'analysis': renderAnalysis(); break;
+    case 'settings': loadSettings(); break;
+  }
+}
+
+function renderAll() { renderTab(currentTab); }
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+
+function init() {
+  load();
+  seedData();
+  populateFilters();
+  loadSettings();
+  renderOverview();
+
+  // Click outside modal to close
+  document.querySelectorAll('.modal-overlay').forEach(overlay=>{
+    overlay.addEventListener('click', e=>{if(e.target===overlay)overlay.classList.add('hidden');});
+  });
+}
+
+init();
+</script>
+</body>
+</html>
